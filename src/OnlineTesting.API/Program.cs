@@ -1,21 +1,24 @@
 using OnlineTesting.API.Middleware;
+using OnlineTesting.API.Services;
 using OnlineTesting.Application;
+using OnlineTesting.Application.Common.Interfaces;
 using OnlineTesting.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Layers
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// Web
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
+builder.Services.AddScoped<IRequestContext, HttpRequestContext>();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Pipeline
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
