@@ -93,6 +93,7 @@ public static class DependencyInjection
         if (options.AuthDateExpirationHours <= 0)
             throw new InvalidOperationException("Telegram:AuthDateExpirationHours must be positive.");
 
-        services.AddScoped<IExternalAuthValidator, TelegramAuthValidator>();
+        // Singleton: валидатор без mutable state, secret_key кэшируется в конструкторе.
+        services.AddSingleton<ITelegramAuthValidator, TelegramAuthValidator>();
     }
 }

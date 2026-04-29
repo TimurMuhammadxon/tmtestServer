@@ -36,12 +36,16 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, AuthResponse>
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
 
-        // Constant-time defense: всегда выполняем BCrypt.Verify,
-        // чтобы response time не выдавал существование пользователя.
+        // Constant-time defense: всегда выполняем BCrypt.Verify.
+        // Учитываем три случая:
+        //   - user == null → используем DummyHash
+        //   - user существует, но PasswordHash == null (Telegram-only юзер) → используем DummyHash
+        //   - user существует с реальным хешем → используем его
+        // Все три случая занимают одинаковое время.
         var passwordHash = user?.PasswordHash ?? _hasher.DummyHash;
         var passwordValid = await _hasher.VerifyAsync(request.Password, passwordHash, ct);
 
-        if (user is null || !user.IsActive || !passwordValid)
+        if (user is null || !user.IsActive || user.PasswordHash is null || !passwordValid)
             throw new UnauthorizedException(InvalidCredentials);
 
         var accessToken = _jwt.GenerateAccessToken(user);

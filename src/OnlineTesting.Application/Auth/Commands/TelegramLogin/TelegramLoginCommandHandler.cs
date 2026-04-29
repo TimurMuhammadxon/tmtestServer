@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using OnlineTesting.Application.Auth.Commands.Login;
 using OnlineTesting.Application.Common.Exceptions;
 using OnlineTesting.Application.Common.Interfaces;
+using OnlineTesting.Application.Common.Models;
 using OnlineTesting.Domain.Users;
 
 namespace OnlineTesting.Application.Auth.Commands.TelegramLogin;
@@ -10,7 +11,7 @@ namespace OnlineTesting.Application.Auth.Commands.TelegramLogin;
 public class TelegramLoginCommandHandler : IRequestHandler<TelegramLoginCommand, AuthResponse>
 {
     private readonly IApplicationDbContext _db;
-    private readonly IExternalAuthValidator _validator;
+    private readonly ITelegramAuthValidator _validator;
     private readonly IJwtService _jwt;
     private readonly IRefreshTokenService _refresh;
     private readonly IRequestContext _requestContext;
@@ -18,7 +19,7 @@ public class TelegramLoginCommandHandler : IRequestHandler<TelegramLoginCommand,
 
     public TelegramLoginCommandHandler(
         IApplicationDbContext db,
-        IExternalAuthValidator validator,
+        ITelegramAuthValidator validator,
         IJwtService jwt,
         IRefreshTokenService refresh,
         IRequestContext requestContext,
@@ -34,16 +35,13 @@ public class TelegramLoginCommandHandler : IRequestHandler<TelegramLoginCommand,
 
     public async Task<AuthResponse> Handle(TelegramLoginCommand request, CancellationToken ct)
     {
-        // Шаг 1: Валидация подписи Telegram
-        var authData = await _validator.ValidateTelegramAsync(request.InitData, ct);
+        var authData = await _validator.ValidateAsync(request.InitData, ct);
 
-        // Шаг 2: Поиск или создание юзера
         var user = await FindOrCreateUserAsync(authData, ct);
 
         if (!user.IsActive)
             throw new UnauthorizedException("User is inactive.");
 
-        // Шаг 3: Выдача токенов (как при обычном login)
         var accessToken = _jwt.GenerateAccessToken(user);
 
         var (raw, hash) = _refresh.Generate();
@@ -59,9 +57,7 @@ public class TelegramLoginCommandHandler : IRequestHandler<TelegramLoginCommand,
         return new AuthResponse(accessToken, raw, _jwt.AccessTokenExpirationSeconds);
     }
 
-    private async Task<User> FindOrCreateUserAsync(
-        Common.Models.TelegramAuthData authData,
-        CancellationToken ct)
+    private async Task<User> FindOrCreateUserAsync(TelegramAuthData authData, CancellationToken ct)
     {
         var existing = await _db.ExternalLogins
             .Include(e => e.User)
@@ -72,7 +68,6 @@ public class TelegramLoginCommandHandler : IRequestHandler<TelegramLoginCommand,
         if (existing is not null)
             return existing.User;
 
-        // Юзер пришёл впервые — создаём
         var placeholderEmail = $"tg_{authData.ExternalUserId}@telegram.local";
         var user = User.CreateFromExternal(placeholderEmail, Role.Student);
 
@@ -80,7 +75,7 @@ public class TelegramLoginCommandHandler : IRequestHandler<TelegramLoginCommand,
             user.Id,
             ExternalLoginProvider.Telegram,
             authData.ExternalUserId,
-            authData.Username);
+            NormalizeUsername(authData.Username));
 
         _db.Users.Add(user);
         _db.ExternalLogins.Add(external);
@@ -101,11 +96,15 @@ public class TelegramLoginCommandHandler : IRequestHandler<TelegramLoginCommand,
 
             if (raceWinner is null)
             {
-                // Странный конфликт (например, по email). Не должно происходить.
+                // Странный конфликт — например, кто-то занял placeholder email
+                // через регистрацию (хотя validator это запрещает).
                 throw new UnauthorizedException("Authentication failed due to a conflict.");
             }
 
             return raceWinner.User;
         }
     }
+
+    private static string? NormalizeUsername(string? raw)
+        => string.IsNullOrWhiteSpace(raw) ? null : raw.Trim();
 }

@@ -11,6 +11,7 @@ namespace OnlineTesting.API.Controllers;
 
 [ApiController]
 [Route("auth")]
+[Produces("application/json")]
 public class AuthController : ControllerBase
 {
     private readonly ISender _mediator;
@@ -26,6 +27,8 @@ public class AuthController : ControllerBase
 
     [HttpPost("register")]
     [ProducesResponseType(typeof(RegisterResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<ActionResult<RegisterResponse>> Register(
         [FromBody] RegisterCommand command, CancellationToken ct)
     {
@@ -35,6 +38,8 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponse>> Login(
         [FromBody] LoginCommand command, CancellationToken ct)
     {
@@ -44,6 +49,8 @@ public class AuthController : ControllerBase
 
     [HttpPost("refresh")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponse>> Refresh(
         [FromBody] RefreshRequest body, CancellationToken ct)
     {
@@ -53,6 +60,8 @@ public class AuthController : ControllerBase
 
     [HttpPost("telegram")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponse>> Telegram(
         [FromBody] TelegramRequest body, CancellationToken ct)
     {
@@ -63,6 +72,8 @@ public class AuthController : ControllerBase
     [Authorize]
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout([FromBody] LogoutRequest body, CancellationToken ct)
     {
         await _mediator.Send(new LogoutCommand(body.RefreshToken), ct);
