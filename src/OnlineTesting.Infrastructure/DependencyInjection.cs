@@ -18,6 +18,7 @@ public static class DependencyInjection
     {
         AddPersistence(services, configuration);
         AddAuthentication(services, configuration);
+        AddTelegram(services, configuration);
 
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
@@ -59,7 +60,7 @@ public static class DependencyInjection
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                options.MapInboundClaims = false; // не превращать sub → nameidentifier
+                options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -76,5 +77,22 @@ public static class DependencyInjection
             });
 
         services.AddAuthorization();
+    }
+
+    private static void AddTelegram(IServiceCollection services, IConfiguration configuration)
+    {
+        var section = configuration.GetSection(TelegramOptions.SectionName);
+        services.Configure<TelegramOptions>(section);
+
+        var options = section.Get<TelegramOptions>()
+            ?? throw new InvalidOperationException("Telegram section is not configured.");
+
+        if (string.IsNullOrWhiteSpace(options.BotToken))
+            throw new InvalidOperationException("Telegram:BotToken must be configured.");
+
+        if (options.AuthDateExpirationHours <= 0)
+            throw new InvalidOperationException("Telegram:AuthDateExpirationHours must be positive.");
+
+        services.AddScoped<IExternalAuthValidator, TelegramAuthValidator>();
     }
 }

@@ -26,7 +26,6 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
 
     public async Task<RegisterResponse> Handle(RegisterCommand request, CancellationToken ct)
     {
-        // TODO: user enumeration via 409 — mitigate with email confirmation flow.
         var email = request.Email.Trim().ToLowerInvariant();
 
         var exists = await _db.Users.AnyAsync(u => u.Email == email, ct);
@@ -34,7 +33,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
             throw new ConflictException(EmailConflictMessage);
 
         var hash = await _hasher.HashAsync(request.Password, ct);
-        var user = User.Create(email, hash, Role.Student);
+        var user = User.CreateWithEmail(email, hash, Role.Student); // ← было User.Create
 
         _db.Users.Add(user);
 
@@ -44,7 +43,6 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
         }
         catch (DbUpdateException ex) when (_dbInspector.IsUniqueConstraintViolation(ex))
         {
-            // race с параллельной регистрацией — мапим в ту же ошибку
             throw new ConflictException(EmailConflictMessage);
         }
 

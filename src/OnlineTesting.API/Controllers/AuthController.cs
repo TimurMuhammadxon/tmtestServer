@@ -5,6 +5,7 @@ using OnlineTesting.Application.Auth.Commands.Login;
 using OnlineTesting.Application.Auth.Commands.Logout;
 using OnlineTesting.Application.Auth.Commands.Refresh;
 using OnlineTesting.Application.Auth.Commands.Register;
+using OnlineTesting.Application.Auth.Commands.TelegramLogin;
 
 namespace OnlineTesting.API.Controllers;
 
@@ -21,6 +22,7 @@ public class AuthController : ControllerBase
 
     public record RefreshRequest(string RefreshToken);
     public record LogoutRequest(string RefreshToken);
+    public record TelegramRequest(string InitData);
 
     [HttpPost("register")]
     [ProducesResponseType(typeof(RegisterResponse), StatusCodes.Status201Created)]
@@ -46,6 +48,15 @@ public class AuthController : ControllerBase
         [FromBody] RefreshRequest body, CancellationToken ct)
     {
         var result = await _mediator.Send(new RefreshCommand(body.RefreshToken), ct);
+        return Ok(result);
+    }
+
+    [HttpPost("telegram")]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AuthResponse>> Telegram(
+        [FromBody] TelegramRequest body, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new TelegramLoginCommand(body.InitData), ct);
         return Ok(result);
     }
 
