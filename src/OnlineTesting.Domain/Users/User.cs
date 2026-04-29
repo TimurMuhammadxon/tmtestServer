@@ -1,5 +1,6 @@
 using OnlineTesting.Domain.Common;
 
+
 namespace OnlineTesting.Domain.Users;
 
 public class User : Entity
