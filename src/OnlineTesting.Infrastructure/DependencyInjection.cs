@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using OnlineTesting.Application.Common.Interfaces;
 using OnlineTesting.Infrastructure.Authentication;
 using OnlineTesting.Infrastructure.Persistence;
+using OnlineTesting.Infrastructure.Subscription;
 
 namespace OnlineTesting.Infrastructure;
 
@@ -24,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<IJwtService, JwtService>();
         services.AddSingleton<IDbExceptionInspector, PostgresExceptionInspector>();
+        services.AddScoped<ISubscriptionChecker, SubscriptionCheckerStub>();
 
         return services;
     }
@@ -74,9 +76,18 @@ public static class DependencyInjection
                     NameClaimType = "sub",
                     RoleClaimType = System.Security.Claims.ClaimTypes.Role
                 };
-            });
 
-        services.AddAuthorization();
+                // Для endpoints с [AllowAnonymous]: битый/истёкший токен не валит запрос.
+                // [Authorize] endpoints всё равно отклонят запрос на этапе авторизации.
+                options.Events = new JwtBearerEvents
+                {
+                    OnAuthenticationFailed = context =>
+                    {
+                        context.NoResult();
+                        return Task.CompletedTask;
+                    }
+                };
+            });
     }
 
     private static void AddTelegram(IServiceCollection services, IConfiguration configuration)

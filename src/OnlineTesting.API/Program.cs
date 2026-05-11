@@ -1,7 +1,9 @@
+using OnlineTesting.API.Localization;
 using OnlineTesting.API.Middleware;
 using OnlineTesting.API.Services;
 using OnlineTesting.Application;
 using OnlineTesting.Application.Common.Interfaces;
+using OnlineTesting.Domain.Authorization;
 using OnlineTesting.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +14,13 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
 builder.Services.AddScoped<IRequestContext, HttpRequestContext>();
+builder.Services.AddScoped<ILanguageContext, LanguageContext>();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(Roles.Policies.ContentManagement, p =>
+        p.RequireRole(Roles.Owner, Roles.SuperAdmin, Roles.Admin));
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -56,6 +65,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<LanguageMiddleware>();
 app.MapControllers();
 
 app.Run();
