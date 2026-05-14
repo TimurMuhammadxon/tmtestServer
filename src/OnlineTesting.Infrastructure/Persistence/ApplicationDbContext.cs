@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using OnlineTesting.Application.Common.Interfaces;
 using OnlineTesting.Domain.Tests;
 using OnlineTesting.Domain.Users;
@@ -20,6 +21,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<QuestionTranslation> QuestionTranslations => Set<QuestionTranslation>();
     public DbSet<Answer> Answers => Set<Answer>();
     public DbSet<AnswerTranslation> AnswerTranslations => Set<AnswerTranslation>();
+    public DbSet<Bilet> Bilets => Set<Bilet>();
+    public DbSet<BiletQuestion> BiletQuestions => Set<BiletQuestion>();
+
+    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+        => Database.BeginTransactionAsync(cancellationToken);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

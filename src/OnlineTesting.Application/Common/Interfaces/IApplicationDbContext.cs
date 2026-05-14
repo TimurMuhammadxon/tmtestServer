@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using OnlineTesting.Domain.Users;
-using OnlineTesting.Domain.Tests; 
+using OnlineTesting.Domain.Tests;
 
 namespace OnlineTesting.Application.Common.Interfaces;
 
@@ -16,6 +17,9 @@ public interface IApplicationDbContext
     DbSet<QuestionTranslation> QuestionTranslations { get; }
     DbSet<Answer> Answers { get; }
     DbSet<AnswerTranslation> AnswerTranslations { get; }
+    DbSet<Bilet> Bilets { get; }
+    DbSet<BiletQuestion> BiletQuestions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
 }

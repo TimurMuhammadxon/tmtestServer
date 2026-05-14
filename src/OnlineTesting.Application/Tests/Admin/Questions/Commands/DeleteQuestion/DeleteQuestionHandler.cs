@@ -15,6 +15,15 @@ public class DeleteQuestionHandler : IRequestHandler<DeleteQuestionCommand>
         var question = await _db.Questions.FirstOrDefaultAsync(q => q.Id == request.Id, ct)
             ?? throw new NotFoundException($"Question '{request.Id}' not found.");
 
+        var usedInBilet = await _db.BiletQuestions
+            .Where(bq => bq.QuestionId == request.Id)
+            .Select(bq => bq.Bilet!.Number)
+            .FirstOrDefaultAsync(ct);
+
+        if (usedInBilet != 0)
+            throw new ConflictException(
+                $"Question is used in bilet #{usedInBilet}. Remove it from the bilet first.");
+
         _db.Questions.Remove(question);
         await _db.SaveChangesAsync(ct);
     }
