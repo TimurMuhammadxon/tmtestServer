@@ -23,19 +23,15 @@ public class SubmitTeacherApplicationHandler : IRequestHandler<SubmitTeacherAppl
         var userId = _currentUser.UserId
             ?? throw new UnauthorizedException("User is not authenticated.");
 
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, ct)
+        var userRole = await _db.Users
+            .Where(u => u.Id == userId)
+            .Select(u => (Role?)u.Role)
+            .FirstOrDefaultAsync(ct)
             ?? throw new NotFoundException($"User '{userId}' not found.");
 
-        if (user.Role == Role.Teacher || user.Role == Role.Admin
-            || user.Role == Role.SuperAdmin || user.Role == Role.Owner)
+        if (userRole == Role.Teacher || userRole == Role.Admin
+            || userRole == Role.SuperAdmin || userRole == Role.Owner)
             throw new ConflictException("You already have teacher or higher privileges.");
-
-        var existing = await _db.TeacherApplications
-            .FirstOrDefaultAsync(a => a.UserId == userId
-                && a.Status == TeacherApplicationStatus.Pending, ct);
-
-        if (existing is not null)
-            throw new ConflictException("You already have a pending application.");
 
         var application = TeacherApplication.Submit(
             userId,
@@ -46,8 +42,15 @@ public class SubmitTeacherApplicationHandler : IRequestHandler<SubmitTeacherAppl
             request.ExperienceText,
             request.AdditionalNotes);
 
-        _db.TeacherApplications.Add(application);
-        await _db.SaveChangesAsync(ct);
+        try
+        {
+            _db.TeacherApplications.Add(application);
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            throw new ConflictException("You already have a pending application.");
+        }
 
         return application.Id;
     }

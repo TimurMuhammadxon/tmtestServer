@@ -26,6 +26,9 @@ public class JoinGroupHandler : IRequestHandler<JoinGroupCommand, JoinGroupResul
             .FirstOrDefaultAsync(g => g.InviteCode == request.InviteCode.ToUpper() && g.IsActive, ct)
             ?? throw new NotFoundException("Invalid or expired invite code.");
 
+        if (group.TeacherId == userId)
+            throw new ConflictException("Teacher cannot join their own group.");
+
         var alreadyMember = await _db.GroupMembers
             .AnyAsync(m => m.GroupId == group.Id && m.UserId == userId, ct);
 
