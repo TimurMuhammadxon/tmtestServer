@@ -132,7 +132,7 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - Exam prediction formula: 60% from last 5 exam scores + 25% topic coverage (≥65% accuracy) + 15% practice volume (cap 500 questions)
 - Helpers GetGrade/GetTopicName/ComputePrediction reused across handlers via GetDashboardHandler static methods
 
-### ✅ B.6.1 — Teacher Core (done, 11 scenarios passed in Swagger)
+### ✅ B.6.1 — Teacher Core (done, 11 scenarios passed in Swagger, review fixes applied)
 - Teacher is NOT a separate account type — it's a role elevation on top of Student
 - New Role: Teacher=4 (Owner=1, SuperAdmin=2, Admin=3, Teacher=4, Student=5)
 - New policy: `TeacherAccess` = Owner + SuperAdmin + Admin + Teacher
@@ -152,8 +152,15 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - Tables: `teacher_applications`, `groups`, `group_members`
 - Fix: GetGroupMembers used OrderBy after Join with record constructor — moved OrderBy before Join
 
+### ✅ B.6.2 — Teacher Test Links (done, 10 scenarios passed in Swagger)
+- `TestLink` entity: TeacherId, Title, Code (8-char random), FlowType, BiletId, TopicIds (uuid[]), QuestionCount, GroupId (label only), MaxAttempts (default 1), ExpiresAt (default now+1d), IsActive
+- `Attempt.TestLinkId (Guid?)` added — test link attempts excluded from all student progress (dashboard, topics, errors, history, streak)
+- Teacher endpoints: `POST/GET /teacher/test-links`, `PATCH /{id}/deactivate`, `GET /{id}/results`
+- Public endpoints: `GET /test-links/{code}` (info + attemptsUsed), `POST /test-links/{code}/start` → attemptId
+- Access: subscription check + MaxAttempts + ExpiresAt; GroupId is metadata only (no access restriction)
+- Tables: `test_links` (uuid[] for TopicIds), `attempts.test_link_id` nullable FK
+
 ## Backlog (not started)
-- **B.6.2** — Teacher Tools (Test Links, Assignments, Analytics, Dashboard)
 - **B.7** — Subscription module + payments
 
 ## Working agreement
