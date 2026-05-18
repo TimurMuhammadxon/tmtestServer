@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OnlineTesting.Application.Common.Exceptions;
 using OnlineTesting.Application.Common.Interfaces;
-using OnlineTesting.Application.Progress.Queries.GetDashboard;
 
 namespace OnlineTesting.Application.Progress.Queries.GetTopicsProgress;
 
@@ -51,9 +50,9 @@ public class GetTopicsProgressHandler : IRequestHandler<GetTopicsProgressQuery, 
             var acc = total > 0 ? Math.Round((double)correct / total * 100, 1) : 0.0;
             return new TopicProgressDto(
                 topic.Id,
-                GetDashboardHandler.GetTopicName(topic, _lang),
+                ProgressHelpers.GetTopicName(topic, _lang),
                 total, correct, acc,
-                GetDashboardHandler.GetGrade(total, acc));
+                ProgressHelpers.GetGrade(total, acc));
         }).ToList();
     }
 }

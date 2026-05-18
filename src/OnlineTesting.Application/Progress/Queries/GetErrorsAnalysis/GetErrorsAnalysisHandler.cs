@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OnlineTesting.Application.Common.Exceptions;
 using OnlineTesting.Application.Common.Interfaces;
-using OnlineTesting.Application.Progress.Queries.GetDashboard;
 
 namespace OnlineTesting.Application.Progress.Queries.GetErrorsAnalysis;
 
@@ -58,25 +57,30 @@ public class GetErrorsAnalysisHandler : IRequestHandler<GetErrorsAnalysisQuery, 
         var reqLang = _lang.RequestedLanguage;
         var defLang = _lang.DefaultLanguage;
 
-        return errorStats.Select(e =>
-        {
-            var q = questions.First(x => x.Id == e.QuestionId);
-            var topic = topics.First(t => t.Id == q.TopicId);
+        return errorStats
+            .Select(e =>
+            {
+                var q = questions.FirstOrDefault(x => x.Id == e.QuestionId);
+                if (q is null) return null;
+                var topic = topics.FirstOrDefault(t => t.Id == q.TopicId);
+                if (topic is null) return null;
 
-            var questionText = q.Translations.FirstOrDefault(t => t.LanguageCode == reqLang)?.Text
-                ?? q.Translations.FirstOrDefault(t => t.LanguageCode == defLang)?.Text
-                ?? "(no translation)";
+                var questionText = q.Translations.FirstOrDefault(t => t.LanguageCode == reqLang)?.Text
+                    ?? q.Translations.FirstOrDefault(t => t.LanguageCode == defLang)?.Text
+                    ?? "(no translation)";
 
-            var errorRate = Math.Round((double)e.Errors / e.Total * 100, 1);
+                var errorRate = Math.Round((double)e.Errors / e.Total * 100, 1);
 
-            return new ErrorAnalysisItemDto(
-                q.Id,
-                questionText,
-                topic.Id,
-                GetDashboardHandler.GetTopicName(topic, _lang),
-                e.Errors,
-                e.Total,
-                errorRate);
-        }).ToList();
+                return new ErrorAnalysisItemDto(
+                    q.Id,
+                    questionText,
+                    topic.Id,
+                    ProgressHelpers.GetTopicName(topic, _lang),
+                    e.Errors,
+                    e.Total,
+                    errorRate);
+            })
+            .Where(x => x is not null)
+            .ToList()!;
     }
 }

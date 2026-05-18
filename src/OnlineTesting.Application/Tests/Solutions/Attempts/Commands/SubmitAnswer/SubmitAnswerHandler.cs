@@ -53,8 +53,15 @@ public class SubmitAnswerHandler : IRequestHandler<SubmitAnswerCommand, SubmitAn
             .AnyAsync(a => a.UserId == userId && a.ActivityDate == today, ct);
         if (!alreadyTracked)
         {
-            _db.UserDailyActivities.Add(UserDailyActivity.Create(userId, today));
-            await _db.SaveChangesAsync(ct);
+            try
+            {
+                _db.UserDailyActivities.Add(UserDailyActivity.Create(userId, today));
+                await _db.SaveChangesAsync(ct);
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                // concurrent request already inserted the same (user_id, activity_date) — safe to ignore
+            }
         }
 
         return new SubmitAnswerResult(

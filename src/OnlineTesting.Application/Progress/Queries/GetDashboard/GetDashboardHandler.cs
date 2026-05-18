@@ -36,13 +36,14 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
 
         var userAttemptIds = _db.Attempts.Where(a => a.UserId == userId).Select(a => a.Id);
 
-        var totalAnswered = await _db.AttemptQuestions
+        var answerStats = await _db.AttemptQuestions
             .Where(aq => userAttemptIds.Contains(aq.AttemptId) && aq.ChosenAnswerId != null)
-            .CountAsync(ct);
+            .GroupBy(_ => true)
+            .Select(g => new { Total = g.Count(), Correct = g.Count(x => x.IsCorrect == true) })
+            .FirstOrDefaultAsync(ct);
 
-        var totalCorrect = await _db.AttemptQuestions
-            .Where(aq => userAttemptIds.Contains(aq.AttemptId) && aq.IsCorrect == true)
-            .CountAsync(ct);
+        var totalAnswered = answerStats?.Total ?? 0;
+        var totalCorrect = answerStats?.Correct ?? 0;
 
         var accuracy = totalAnswered > 0
             ? Math.Round((double)totalCorrect / totalAnswered * 100, 1)
@@ -97,9 +98,9 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
                     var acc = Math.Round((double)s.Correct / s.Total * 100, 1);
                     return new WeakTopicDto(
                         topic.Id,
-                        GetTopicName(topic, _lang),
+                        ProgressHelpers.GetTopicName(topic, _lang),
                         s.Total, s.Correct, acc,
-                        GetGrade(s.Total, acc));
+                        ProgressHelpers.GetGrade(s.Total, acc));
                 })
                 .Where(x => x is not null)
                 .ToList()!;
@@ -181,22 +182,4 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
         _ => "Мастер"
     };
 
-    internal static string GetGrade(int total, double accuracy)
-    {
-        if (total < 5) return "Не изучено";
-        return accuracy switch
-        {
-            >= 85 => "Отлично",
-            >= 65 => "Хорошо",
-            >= 40 => "Нужно повторить",
-            _ => "Критично"
-        };
-    }
-
-    internal static string GetTopicName(OnlineTesting.Domain.Tests.Topic topic, ILanguageContext lang)
-    {
-        return topic.Translations.FirstOrDefault(t => t.LanguageCode == lang.RequestedLanguage)?.Name
-            ?? topic.Translations.FirstOrDefault(t => t.LanguageCode == lang.DefaultLanguage)?.Name
-            ?? "(no translation)";
-    }
 }
