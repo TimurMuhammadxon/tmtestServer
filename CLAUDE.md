@@ -86,7 +86,7 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - Partial unique indexes: `ux_languages_default`, `ux_topics_demo`, `ux_answers_question_correct`
 - Cascade: translations cascade with parent; answers cascade with question; questions → topics RESTRICT
 
-### ✅ B.2 — Bilet CRUD (code complete, migration applied, Swagger tests pending)
+### ✅ B.2 — Bilet CRUD (done, 13 scenarios passed in Swagger)
 - A Bilet is exactly 20 references to existing Questions; numbered 1..N (62 expected)
 - One question lives in exactly one bilet (enforced by unique index on `bilet_questions.question_id`)
 - One demo bilet at a time (partial unique on `bilets.is_demo`)
@@ -100,11 +100,23 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - `IsCorrect` and `Explanation` returned in GET (textbook mode)
 - `IApplicationDbContext` gained `BeginTransactionAsync` method
 
-### ⏳ Pending — Swagger testing of B.2
-Pre-coded 13-scenario test plan exists. Need at least 22 questions in DB before starting.
+### ✅ B.3 — Attempt + 5 flows (done, 10 scenarios passed in Swagger)
+- Attempt is a single-session test; no resume/save-progress
+- 5 flow types: Bilet(1), Topic(2), Custom(3), Exam(4), Marathon(5)
+- Bilet: 20 fixed questions from a bilet in order
+- Topic: ALL active questions from one topic, random order
+- Custom: random N questions from selected topics (topicIds=null → all topics)
+- Exam: random 20 from all active questions; ExamTimeLimitSeconds=1500 (25 min, enforced client-side)
+- Marathon: all active questions, random order
+- Exam rules: 3rd mistake → auto-fail immediately (isFinished:true in SubmitAnswer response); on Finish → Passed if correctCount≥18 else Failed
+- AttemptStatus: InProgress(0), Completed(1), Passed(2), Failed(3)
+- Tables: `attempts`, `attempt_questions` (composite PK attempt_id+question_id)
+- Cascade: attempt → attempt_questions; attempt_questions → questions RESTRICT
+- Student endpoints: POST /attempts, GET /attempts/{id}, POST /attempts/{id}/answer, POST /attempts/{id}/finish
+- GET /attempts/{id} returns remainingSeconds for Exam+InProgress
+- Textbook mode: isCorrect shown immediately after each answer
 
 ## Backlog (not started)
-- **B.3** — Attempt + 5 flows (topic test, bilet, custom, marathon, exam) + answering endpoints
 - **B.4** — Image upload (storage for `Question.ImageKey`)
 - **B.5** — My Progress / analytics
 - **B.6** — Teacher flow

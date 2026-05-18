@@ -19,6 +19,8 @@ public interface IApplicationDbContext
     DbSet<AnswerTranslation> AnswerTranslations { get; }
     DbSet<Bilet> Bilets { get; }
     DbSet<BiletQuestion> BiletQuestions { get; }
+    DbSet<Attempt> Attempts { get; }
+    DbSet<AttemptQuestion> AttemptQuestions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);

@@ -23,6 +23,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<AnswerTranslation> AnswerTranslations => Set<AnswerTranslation>();
     public DbSet<Bilet> Bilets => Set<Bilet>();
     public DbSet<BiletQuestion> BiletQuestions => Set<BiletQuestion>();
+    public DbSet<Attempt> Attempts => Set<Attempt>();
+    public DbSet<AttemptQuestion> AttemptQuestions => Set<AttemptQuestion>();
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
         => Database.BeginTransactionAsync(cancellationToken);
