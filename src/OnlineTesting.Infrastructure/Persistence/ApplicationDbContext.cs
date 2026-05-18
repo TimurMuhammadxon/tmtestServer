@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using OnlineTesting.Application.Common.Interfaces;
 using OnlineTesting.Domain.Progress;
+using OnlineTesting.Domain.Teacher;
 using OnlineTesting.Domain.Tests;
 using OnlineTesting.Domain.Users;
 
@@ -27,6 +28,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Attempt> Attempts => Set<Attempt>();
     public DbSet<AttemptQuestion> AttemptQuestions => Set<AttemptQuestion>();
     public DbSet<UserDailyActivity> UserDailyActivities => Set<UserDailyActivity>();
+    public DbSet<TeacherApplication> TeacherApplications => Set<TeacherApplication>();
+    public DbSet<Group> Groups => Set<Group>();
+    public DbSet<GroupMember> GroupMembers => Set<GroupMember>();
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
         => Database.BeginTransactionAsync(cancellationToken);

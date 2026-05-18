@@ -82,4 +82,5 @@ public class User : Entity
     public void Deactivate() => IsActive = false;
     public void Activate() => IsActive = true;
     public void ConfirmEmail() => EmailConfirmed = true;
+    public void SetRole(Role role) => Role = role;
 }

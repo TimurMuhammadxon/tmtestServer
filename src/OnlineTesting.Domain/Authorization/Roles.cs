@@ -11,5 +11,6 @@ public static class Roles
     public static class Policies
     {
         public const string ContentManagement = nameof(ContentManagement);
+        public const string TeacherAccess = nameof(TeacherAccess);
     }
 }

@@ -132,8 +132,28 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - Exam prediction formula: 60% from last 5 exam scores + 25% topic coverage (≥65% accuracy) + 15% practice volume (cap 500 questions)
 - Helpers GetGrade/GetTopicName/ComputePrediction reused across handlers via GetDashboardHandler static methods
 
+### ✅ B.6.1 — Teacher Core (done, 11 scenarios passed in Swagger)
+- Teacher is NOT a separate account type — it's a role elevation on top of Student
+- New Role: Teacher=4 (Owner=1, SuperAdmin=2, Admin=3, Teacher=4, Student=5)
+- New policy: `TeacherAccess` = Owner + SuperAdmin + Admin + Teacher
+- User.SetRole(role) added to User domain entity
+- **Teacher Application System**: Student submits application → Admin approves/rejects → role changes to Teacher
+  - Partial unique index: only one Pending application per user at a time
+  - Approve: sets application.Status=Approved + user.SetRole(Teacher)
+  - Reject: sets application.Status=Rejected + stores RejectionReason
+  - Student can see their latest application via GET /teacher-applications/my
+- **Group System**: Teacher creates groups with auto-generated 8-char invite code (cryptographically random)
+  - Students join by invite code via POST /groups/join
+  - Teacher can view members, remove members, delete group (cascade deletes members)
+  - Unique index on invite_code
+- Student endpoints: POST /teacher-applications, GET /teacher-applications/my, POST /groups/join
+- Admin endpoints: GET /admin/teacher-applications (filterable by status), POST /{id}/approve, POST /{id}/reject
+- Teacher endpoints: POST/GET /teacher/groups, DELETE /teacher/groups/{id}, GET /teacher/groups/{id}/members, DELETE /teacher/groups/{id}/members/{userId}
+- Tables: `teacher_applications`, `groups`, `group_members`
+- Fix: GetGroupMembers used OrderBy after Join with record constructor — moved OrderBy before Join
+
 ## Backlog (not started)
-- **B.6** — Teacher flow
+- **B.6.2** — Teacher Tools (Test Links, Assignments, Analytics, Dashboard)
 - **B.7** — Subscription module + payments
 
 ## Working agreement
