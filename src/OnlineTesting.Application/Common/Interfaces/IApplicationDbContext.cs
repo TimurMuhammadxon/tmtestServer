@@ -27,6 +27,7 @@ public interface IApplicationDbContext
     DbSet<TeacherApplication> TeacherApplications { get; }
     DbSet<Group> Groups { get; }
     DbSet<GroupMember> GroupMembers { get; }
+    DbSet<TestLink> TestLinks { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);

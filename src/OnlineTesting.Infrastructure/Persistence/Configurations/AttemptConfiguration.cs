@@ -18,8 +18,9 @@ public class AttemptConfiguration : IEntityTypeConfiguration<Attempt>
         builder.Property(a => a.StartedAt).IsRequired();
         builder.Property(a => a.FinishedAt);
         builder.Property(a => a.CorrectCount);
-        // intentionally no FK — attempt history must survive bilet deletion
+        // intentionally no FK — attempt history must survive bilet/link deletion
         builder.Property(a => a.BiletId);
+        builder.Property(a => a.TestLinkId);
 
         builder.HasIndex(a => a.UserId)
             .HasDatabaseName("ix_attempts_user_id");

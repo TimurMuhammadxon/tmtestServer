@@ -23,7 +23,7 @@ public class GetTopicsProgressHandler : IRequestHandler<GetTopicsProgressQuery, 
         var userId = _currentUser.UserId
             ?? throw new UnauthorizedException("User is not authenticated.");
 
-        var userAttemptIds = _db.Attempts.Where(a => a.UserId == userId).Select(a => a.Id);
+        var userAttemptIds = _db.Attempts.Where(a => a.UserId == userId && a.TestLinkId == null).Select(a => a.Id);
 
         var topicStats = await _db.AttemptQuestions
             .Where(aq => userAttemptIds.Contains(aq.AttemptId) && aq.ChosenAnswerId != null)

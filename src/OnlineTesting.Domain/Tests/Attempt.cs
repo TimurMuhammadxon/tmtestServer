@@ -13,6 +13,7 @@ public class Attempt : Entity
     public DateTime? FinishedAt { get; private set; }
     public int? CorrectCount { get; private set; }
     public Guid? BiletId { get; private set; }
+    public Guid? TestLinkId { get; private set; }
 
     public IReadOnlyCollection<AttemptQuestion> Questions => _questions.AsReadOnly();
 
@@ -23,7 +24,7 @@ public class Attempt : Entity
 
     private Attempt() { }
 
-    public static Attempt Start(Guid userId, FlowType flowType, IReadOnlyList<Guid> questionIds, Guid? biletId = null)
+    public static Attempt Start(Guid userId, FlowType flowType, IReadOnlyList<Guid> questionIds, Guid? biletId = null, Guid? testLinkId = null)
     {
         var attempt = new Attempt
         {
@@ -32,7 +33,8 @@ public class Attempt : Entity
             Flow = flowType,
             Status = AttemptStatus.InProgress,
             StartedAt = DateTime.UtcNow,
-            BiletId = biletId
+            BiletId = biletId,
+            TestLinkId = testLinkId
         };
 
         for (var i = 0; i < questionIds.Count; i++)

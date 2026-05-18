@@ -34,7 +34,7 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
         var currentStreak = ComputeCurrentStreak(dateSet, today);
         var longestStreak = ComputeLongestStreak(allDates);
 
-        var userAttemptIds = _db.Attempts.Where(a => a.UserId == userId).Select(a => a.Id);
+        var userAttemptIds = _db.Attempts.Where(a => a.UserId == userId && a.TestLinkId == null).Select(a => a.Id);
 
         var answerStats = await _db.AttemptQuestions
             .Where(aq => userAttemptIds.Contains(aq.AttemptId) && aq.ChosenAnswerId != null)
@@ -63,6 +63,7 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
 
         var examResults = await _db.Attempts
             .Where(a => a.UserId == userId
+                && a.TestLinkId == null
                 && a.Flow == FlowType.Exam
                 && a.Status != AttemptStatus.InProgress
                 && a.CorrectCount != null)
@@ -107,7 +108,7 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
         }
 
         var recentRaw = await _db.Attempts
-            .Where(a => a.UserId == userId && a.Status != AttemptStatus.InProgress)
+            .Where(a => a.UserId == userId && a.TestLinkId == null && a.Status != AttemptStatus.InProgress)
             .OrderByDescending(a => a.FinishedAt)
             .Take(5)
             .Select(a => new

@@ -26,7 +26,7 @@ public class GetAttemptHistoryHandler : IRequestHandler<GetAttemptHistoryQuery, 
         var page = Math.Max(1, request.Page);
         var size = Math.Clamp(request.PageSize, 1, 100);
 
-        var query = _db.Attempts.Where(a => a.UserId == userId);
+        var query = _db.Attempts.Where(a => a.UserId == userId && a.TestLinkId == null);
 
         if (request.FlowType.HasValue)
             query = query.Where(a => a.Flow == request.FlowType.Value);
