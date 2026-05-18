@@ -7,7 +7,7 @@ public class Attempt : Entity
     private readonly List<AttemptQuestion> _questions = new();
 
     public Guid UserId { get; private set; }
-    public FlowType FlowType { get; private set; }
+    public FlowType Flow { get; private set; }
     public AttemptStatus Status { get; private set; }
     public DateTime StartedAt { get; private set; }
     public DateTime? FinishedAt { get; private set; }
@@ -29,7 +29,7 @@ public class Attempt : Entity
         {
             Id = Guid.NewGuid(),
             UserId = userId,
-            FlowType = flowType,
+            Flow = flowType,
             Status = AttemptStatus.InProgress,
             StartedAt = DateTime.UtcNow,
             BiletId = biletId
@@ -44,10 +44,12 @@ public class Attempt : Entity
     // Returns true if the attempt was auto-finished (exam: 3rd mistake)
     public bool Answer(Guid questionId, Guid answerId, bool isCorrect)
     {
-        var aq = _questions.First(q => q.QuestionId == questionId);
+        var aq = _questions.FirstOrDefault(q => q.QuestionId == questionId)
+            ?? throw new InvalidOperationException($"Question {questionId} is not part of this attempt.");
+
         aq.SetAnswer(answerId, isCorrect);
 
-        if (FlowType == Domain.Tests.FlowType.Exam)
+        if (Flow == FlowType.Exam)
         {
             var mistakeCount = _questions.Count(q => q.IsCorrect == false);
             if (mistakeCount > ExamMaxMistakes)
@@ -69,7 +71,7 @@ public class Attempt : Entity
         var correct = _questions.Count(q => q.IsCorrect == true);
         CorrectCount = correct;
 
-        Status = FlowType == Domain.Tests.FlowType.Exam
+        Status = Flow == FlowType.Exam
             ? (correct >= ExamPassThreshold ? AttemptStatus.Passed : AttemptStatus.Failed)
             : AttemptStatus.Completed;
     }

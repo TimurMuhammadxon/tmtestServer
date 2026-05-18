@@ -13,11 +13,12 @@ public class AttemptConfiguration : IEntityTypeConfiguration<Attempt>
         builder.HasKey(a => a.Id);
 
         builder.Property(a => a.UserId).IsRequired();
-        builder.Property(a => a.FlowType).IsRequired();
+        builder.Property(a => a.Flow).HasColumnName("flow_type").IsRequired();
         builder.Property(a => a.Status).IsRequired();
         builder.Property(a => a.StartedAt).IsRequired();
         builder.Property(a => a.FinishedAt);
         builder.Property(a => a.CorrectCount);
+        // intentionally no FK — attempt history must survive bilet deletion
         builder.Property(a => a.BiletId);
 
         builder.HasIndex(a => a.UserId)

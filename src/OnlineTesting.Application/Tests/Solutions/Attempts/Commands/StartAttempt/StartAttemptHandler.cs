@@ -47,15 +47,15 @@ public class StartAttemptHandler : IRequestHandler<StartAttemptCommand, Guid>
 
     private async Task<IReadOnlyList<Guid>> SelectBiletQuestionsAsync(Guid biletId, CancellationToken ct)
     {
-        var exists = await _db.Bilets.AnyAsync(b => b.Id == biletId && b.IsActive, ct);
-        if (!exists)
-            throw new NotFoundException($"Active bilet '{biletId}' not found.");
+        var bilet = await _db.Bilets
+            .Include(b => b.BiletQuestions.OrderBy(bq => bq.OrderIndex))
+            .FirstOrDefaultAsync(b => b.Id == biletId, ct)
+            ?? throw new NotFoundException($"Bilet '{biletId}' not found.");
 
-        return await _db.BiletQuestions
-            .Where(bq => bq.BiletId == biletId)
-            .OrderBy(bq => bq.OrderIndex)
-            .Select(bq => bq.QuestionId)
-            .ToListAsync(ct);
+        if (!bilet.IsActive)
+            throw new ConflictException($"Bilet '{biletId}' is not active.");
+
+        return bilet.BiletQuestions.Select(bq => bq.QuestionId).ToList();
     }
 
     private async Task<IReadOnlyList<Guid>> SelectAllTopicQuestionsAsync(Guid topicId, CancellationToken ct)

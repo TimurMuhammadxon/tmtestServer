@@ -86,7 +86,7 @@ public class GetAttemptHandler : IRequestHandler<GetAttemptQuery, AttemptDto>
         }).ToList();
 
         int? remainingSeconds = null;
-        if (attempt.FlowType == FlowType.Exam && attempt.Status == AttemptStatus.InProgress)
+        if (attempt.Flow == FlowType.Exam && attempt.Status == AttemptStatus.InProgress)
         {
             var elapsed = (DateTime.UtcNow - attempt.StartedAt).TotalSeconds;
             remainingSeconds = Math.Max(0, Attempt.ExamTimeLimitSeconds - (int)elapsed);
@@ -94,7 +94,7 @@ public class GetAttemptHandler : IRequestHandler<GetAttemptQuery, AttemptDto>
 
         return new AttemptDto(
             attempt.Id,
-            attempt.FlowType.ToString(),
+            attempt.Flow.ToString(),
             attempt.Status.ToString(),
             attempt.StartedAt,
             attempt.FinishedAt,
