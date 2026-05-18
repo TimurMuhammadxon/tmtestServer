@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OnlineTesting.Application.Common.Exceptions;
 using OnlineTesting.Application.Common.Interfaces;
+using OnlineTesting.Domain.Progress;
 using OnlineTesting.Domain.Tests;
 
 namespace OnlineTesting.Application.Tests.Solutions.Attempts.Commands.SubmitAnswer;
@@ -46,6 +47,15 @@ public class SubmitAnswerHandler : IRequestHandler<SubmitAnswerCommand, SubmitAn
         var isFinished = attempt.Answer(request.QuestionId, request.AnswerId, answer.IsCorrect);
 
         await _db.SaveChangesAsync(ct);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var alreadyTracked = await _db.UserDailyActivities
+            .AnyAsync(a => a.UserId == userId && a.ActivityDate == today, ct);
+        if (!alreadyTracked)
+        {
+            _db.UserDailyActivities.Add(UserDailyActivity.Create(userId, today));
+            await _db.SaveChangesAsync(ct);
+        }
 
         return new SubmitAnswerResult(
             answer.IsCorrect,

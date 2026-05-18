@@ -120,8 +120,19 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - Admin endpoints: `POST /admin/questions/{id}/image` (multipart/form-data), `DELETE /admin/questions/{id}/image`
 - Storage config in `appsettings.json` → `Storage:{ Endpoint, AccessKey, SecretKey, BucketName, UseHttps }`
 
+### ✅ B.5 — My Progress / analytics (done, 8 scenarios passed in Swagger)
+- New table: `user_daily_activities` (user_id, activity_date) — composite PK, for streak tracking
+- Streak tracked on every `SubmitAnswer` — upserts today's record for the user
+- 4 student endpoints: `GET /progress/dashboard`, `/progress/topics`, `/progress/errors`, `/progress/history`
+- Dashboard: currentStreak, longestStreak, level (6 levels by totalCorrect), accuracyPercent, examPassPrediction (0–95), weakTopics (accuracy<65%, min 5 answered), recentAttempts
+- Topics: all topics ordered by OrderIndex, with totalAnswered/correctCount/accuracyPercent/grade
+- Grade thresholds: Отлично ≥85%, Хорошо ≥65%, Нужно повторить ≥40%, Критично <40%, Не изучено <5 answered
+- Errors: top 20 questions by error count, with errorRatePercent and topic info
+- History: paginated attempt list, filterable by flowType
+- Exam prediction formula: 60% from last 5 exam scores + 25% topic coverage (≥65% accuracy) + 15% practice volume (cap 500 questions)
+- Helpers GetGrade/GetTopicName/ComputePrediction reused across handlers via GetDashboardHandler static methods
+
 ## Backlog (not started)
-- **B.5** — My Progress / analytics
 - **B.6** — Teacher flow
 - **B.7** — Subscription module + payments
 
