@@ -13,6 +13,7 @@ public record QuestionAdminListItemDto(
     Guid Id,
     Guid TopicId,
     string? ImageKey,
+    string? ImageUrl,
     bool IsActive,
     string DefaultText,
     int AnswersCount);

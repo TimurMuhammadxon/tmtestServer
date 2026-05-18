@@ -1,14 +1,3 @@
-Хорошо, переезд в Claude Code — разумный шаг для проекта такого масштаба. Там я смогу сам читать файлы, делать правки, запускать `dotnet build` и `dotnet ef` команды — без копипасты туда-сюда.
-
-Вот что нужно сделать, чтобы новый я в Claude Code сразу включился в работу без потери контекста.
-
-## 1. Создай файл-резюме в корне проекта
-
-Положи в корень репозитория файл `CLAUDE.md` — Claude Code автоматически читает его при старте сессии. Это аналог того длинного промпта, который мы делали при переезде из B.1 в B.2, но более компактный и структурированный под IDE-формат работы.
-
-Я подготовил содержимое — скопируй целиком:
-
-```markdown
 # Online Testing Platform — Driving Licence Theory (Uzbekistan)
 
 ## Stack
@@ -17,7 +6,8 @@
 - MediatR (CQRS), FluentValidation via IPipelineBehavior
 - EF Core + PostgreSQL (snake_case via EFCore.NamingConventions)
 - BCrypt, JWT + refresh token rotation, HMAC for Telegram WebApp
-- PostgreSQL in Docker: container `onlinetesting-pg`, port 15432, db `online_testing`
+- MinIO (S3-compatible) via AWSSDK.S3 v4 for image storage
+- docker-compose: PostgreSQL on port 15432, MinIO on ports 9000/9001
 
 ## Languages
 Three: `uz-latn` (default), `ru`, `uz-cyrl`. Constants in `Application/Common/Constants/Languages.cs`.
@@ -27,7 +17,7 @@ Three: `uz-latn` (default), `ru`, `uz-cyrl`. Constants in `Application/Common/Co
 src/
 ├── OnlineTesting.Domain/          (entities, base Entity, INotification domain events)
 ├── OnlineTesting.Application/     (CQRS handlers, validators, behaviors, interfaces)
-├── OnlineTesting.Infrastructure/  (EF Core, ApplicationDbContext, JWT, repositories)
+├── OnlineTesting.Infrastructure/  (EF Core, ApplicationDbContext, JWT, Storage)
 └── OnlineTesting.API/             (Controllers, Middleware, Localization)
 ```
 
@@ -41,7 +31,7 @@ src/
 
 **Application**
 - Folder pattern: `Tests/{Admin|Solutions}/{EntityType}/Commands|Queries/{Feature}/{Feature}Command.cs + Handler.cs + Validator.cs`
-- Infrastructure interfaces in `Common/Interfaces/`: `IApplicationDbContext`, `IJwtService`, `IPasswordHasher`, `IRequestContext`, `ICurrentUser`, `IDbExceptionInspector`, `ITelegramAuthValidator`, `ILanguageContext`, `ISubscriptionChecker`
+- Infrastructure interfaces in `Common/Interfaces/`: `IApplicationDbContext`, `IJwtService`, `IPasswordHasher`, `IRequestContext`, `ICurrentUser`, `IDbExceptionInspector`, `ITelegramAuthValidator`, `ILanguageContext`, `ISubscriptionChecker`, `IStorageService`
 - `ILanguageContext` exposes `RequestedLanguage` and `DefaultLanguage`
 - Custom exceptions: `ValidationException`, `ConflictException`, `NotFoundException`, `UnauthorizedException`
 - `ValidationBehavior` via `IPipelineBehavior`
@@ -52,6 +42,8 @@ src/
 - `OnModelCreating` uses `ApplyConfigurationsFromAssembly` — new configs picked up automatically
 - `PostgresExceptionInspector.IsUniqueConstraintViolation(Exception)` for SQLSTATE 23505
 - `SubscriptionCheckerStub` always returns `true` (placeholder)
+- `MinioStorageService`: `UseChunkEncoding = false` (required for HTTP; DisablePayloadSigning needs HTTPS)
+- `BucketInitializer`: IHostedService — creates bucket + sets public-read policy on startup
 
 **API**
 - `ExceptionHandlingMiddleware` maps custom exceptions to RFC 7807 `ProblemDetails`
@@ -116,8 +108,19 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - GET /attempts/{id} returns remainingSeconds for Exam+InProgress
 - Textbook mode: isCorrect shown immediately after each answer
 
+### ✅ B.4 — Image upload (done, 7 scenarios passed in Swagger)
+- `Question.ImageKey` stores the MinIO object key (e.g. `questions/{id}.png`)
+- `IStorageService`: `UploadAsync`, `DeleteAsync`, `GetPublicUrl`
+- `MinioStorageService` uses `UseChunkEncoding = false` (HTTP-compatible, not DisablePayloadSigning)
+- `BucketInitializer` IHostedService creates bucket + public-read policy on startup
+- `UploadQuestionImage`: validates content type (image/*), max 5 MB, deletes old image if exists, key = `questions/{id}.{ext}`
+- `DeleteQuestionImage`: deletes from storage + clears ImageKey; 404 if no image
+- `DeleteQuestion` auto-deletes image from storage if present
+- `GET /admin/questions/{id}` and list both return `imageUrl` (full MinIO URL) alongside `imageKey`
+- Admin endpoints: `POST /admin/questions/{id}/image` (multipart/form-data), `DELETE /admin/questions/{id}/image`
+- Storage config in `appsettings.json` → `Storage:{ Endpoint, AccessKey, SecretKey, BucketName, UseHttps }`
+
 ## Backlog (not started)
-- **B.4** — Image upload (storage for `Question.ImageKey`)
 - **B.5** — My Progress / analytics
 - **B.6** — Teacher flow
 - **B.7** — Subscription module + payments
@@ -155,39 +158,4 @@ docker exec -it onlinetesting-pg psql -U postgres -d online_testing -c "\d <tabl
 ## Style preferences (from previous sessions)
 - Russian language for chat
 - Compact explanations, no over-formatting
-- Show changes file-by-file with full content (not patches), batched 22 files max per response
 - Always state assumptions inline; ask only when truly blocked
-```
-
-## 2. Закоммить файл
-
-```bash
-git add CLAUDE.md
-git commit -m "docs: add CLAUDE.md context for Claude Code"
-```
-
-## 3. Что новый я будет делать в Claude Code
-
-Когда откроешь проект в Antigravity и запустишь Claude Code — он автоматически прочитает `CLAUDE.md` и поймёт весь контекст. Тебе нужно будет просто сказать в первом сообщении что-то вроде:
-
-> «Продолжаем работу над B.2. Код написан, миграция применена. Осталось пройти 13 сценариев тестирования через Swagger. Помоги по ходу если что-то не так пойдёт.»
-
-Или если хочешь сразу к B.3:
-
-> «B.2 готов и протестирован. Переходим к B.3 — Attempt и flow тестирования. Начни с архитектуры.»
-
-## 4. Бонус — что Claude Code умеет лучше чем чат
-
-- Сам читает любой файл в проекте — больше не надо копировать содержимое
-- Сам делает правки через инструменты редактирования
-- Сам запускает `dotnet build`, `dotnet ef`, `git` команды
-- Видит ошибки компиляции и исправляет в цикле
-- Делает коммиты с осмысленными сообщениями
-
-То есть процесс «партия 22 файла → ты раскладываешь → говоришь успешно → следующая партия» исчезнет. Будет одна итерация: я делаю изменения → запускаю билд → если красный, исправляю → если зелёный, говорю «готово».
-
-## 5. Один совет на старте
-
-Когда впервые запустишь Claude Code в этом проекте — попроси его **сначала прочитать `CLAUDE.md` и подтвердить, что он понял контекст**, прежде чем что-то делать. Так убедишься, что переезд прошёл без потерь.
-
-Удачи! Если завтра в Claude Code что-то будет работать не так как мы тут договаривались — просто скажи «вернёмся к чату» и я снова окажусь здесь.

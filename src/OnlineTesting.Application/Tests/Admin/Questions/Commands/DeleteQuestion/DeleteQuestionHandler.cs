@@ -8,7 +8,13 @@ namespace OnlineTesting.Application.Tests.Admin.Questions.Commands.DeleteQuestio
 public class DeleteQuestionHandler : IRequestHandler<DeleteQuestionCommand>
 {
     private readonly IApplicationDbContext _db;
-    public DeleteQuestionHandler(IApplicationDbContext db) => _db = db;
+    private readonly IStorageService _storage;
+
+    public DeleteQuestionHandler(IApplicationDbContext db, IStorageService storage)
+    {
+        _db = db;
+        _storage = storage;
+    }
 
     public async Task Handle(DeleteQuestionCommand request, CancellationToken ct)
     {
@@ -23,6 +29,9 @@ public class DeleteQuestionHandler : IRequestHandler<DeleteQuestionCommand>
         if (usedInBilet != 0)
             throw new ConflictException(
                 $"Question is used in bilet #{usedInBilet}. Remove it from the bilet first.");
+
+        if (question.ImageKey is not null)
+            await _storage.DeleteAsync(question.ImageKey, ct);
 
         _db.Questions.Remove(question);
         await _db.SaveChangesAsync(ct);

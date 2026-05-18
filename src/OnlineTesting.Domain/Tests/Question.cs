@@ -63,6 +63,9 @@ public sealed class Question : Entity
         Touch();
     }
 
+    public void SetImage(string key) { ImageKey = key; Touch(); }
+    public void RemoveImage() { ImageKey = null; Touch(); }
+
     public void Activate() { IsActive = true; Touch(); }
     public void Deactivate() { IsActive = false; Touch(); }
 

@@ -9,7 +9,13 @@ namespace OnlineTesting.Application.Tests.Admin.Questions.Queries.GetQuestionByI
 public class GetQuestionByIdHandler : IRequestHandler<GetQuestionByIdQuery, QuestionAdminDto>
 {
     private readonly IApplicationDbContext _db;
-    public GetQuestionByIdHandler(IApplicationDbContext db) => _db = db;
+    private readonly IStorageService _storage;
+
+    public GetQuestionByIdHandler(IApplicationDbContext db, IStorageService storage)
+    {
+        _db = db;
+        _storage = storage;
+    }
 
     public async Task<QuestionAdminDto> Handle(GetQuestionByIdQuery request, CancellationToken ct)
     {
@@ -24,6 +30,7 @@ public class GetQuestionByIdHandler : IRequestHandler<GetQuestionByIdQuery, Ques
             q.Id,
             q.TopicId,
             q.ImageKey,
+            q.ImageKey is not null ? _storage.GetPublicUrl(q.ImageKey) : null,
             q.IsActive,
             q.CreatedAt,
             q.UpdatedAt,

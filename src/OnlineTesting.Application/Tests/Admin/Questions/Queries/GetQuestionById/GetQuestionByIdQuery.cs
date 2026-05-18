@@ -9,6 +9,7 @@ public record QuestionAdminDto(
     Guid Id,
     Guid TopicId,
     string? ImageKey,
+    string? ImageUrl,
     bool IsActive,
     DateTime CreatedAt,
     DateTime UpdatedAt,

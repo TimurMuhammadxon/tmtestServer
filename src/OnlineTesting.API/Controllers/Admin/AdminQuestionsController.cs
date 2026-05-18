@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using OnlineTesting.Application.Common.Models;
 using OnlineTesting.Application.Tests.Admin.Questions.Commands.CreateQuestion;
 using OnlineTesting.Application.Tests.Admin.Questions.Commands.DeleteQuestion;
+using OnlineTesting.Application.Tests.Admin.Questions.Commands.DeleteQuestionImage;
 using OnlineTesting.Application.Tests.Admin.Questions.Commands.DeleteQuestionTranslation;
 using OnlineTesting.Application.Tests.Admin.Questions.Commands.SetQuestionActive;
 using OnlineTesting.Application.Tests.Admin.Questions.Commands.UpdateQuestion;
+using OnlineTesting.Application.Tests.Admin.Questions.Commands.UploadQuestionImage;
 using OnlineTesting.Application.Tests.Admin.Questions.Commands.UpsertQuestionTranslation;
 using OnlineTesting.Application.Tests.Admin.Questions.Queries.GetQuestionById;
 using OnlineTesting.Application.Tests.Admin.Questions.Queries.GetQuestionsList;
@@ -93,6 +95,33 @@ public class AdminQuestionsController : ControllerBase
     public async Task<IActionResult> DeleteTranslation(Guid id, string lang, CancellationToken ct)
     {
         await _sender.Send(new DeleteQuestionTranslationCommand(id, lang), ct);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/image")]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(UploadQuestionImageResult), StatusCodes.Status200OK)]
+    public async Task<IActionResult> UploadImage(Guid id, IFormFile file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+            return BadRequest("File is required.");
+
+        const long maxSize = 5 * 1024 * 1024;
+        if (file.Length > maxSize)
+            return BadRequest("File size must not exceed 5 MB.");
+
+        using var stream = file.OpenReadStream();
+        var result = await _sender.Send(
+            new UploadQuestionImageCommand(id, stream, file.ContentType), ct);
+
+        return Ok(result);
+    }
+
+    [HttpDelete("{id:guid}/image")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteImage(Guid id, CancellationToken ct)
+    {
+        await _sender.Send(new DeleteQuestionImageCommand(id), ct);
         return NoContent();
     }
 

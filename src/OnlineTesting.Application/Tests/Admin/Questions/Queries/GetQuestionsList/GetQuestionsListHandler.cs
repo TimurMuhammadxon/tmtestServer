@@ -9,7 +9,13 @@ namespace OnlineTesting.Application.Tests.Admin.Questions.Queries.GetQuestionsLi
 public class GetQuestionsListHandler : IRequestHandler<GetQuestionsListQuery, PagedResult<QuestionAdminListItemDto>>
 {
     private readonly IApplicationDbContext _db;
-    public GetQuestionsListHandler(IApplicationDbContext db) => _db = db;
+    private readonly IStorageService _storage;
+
+    public GetQuestionsListHandler(IApplicationDbContext db, IStorageService storage)
+    {
+        _db = db;
+        _storage = storage;
+    }
 
     public async Task<PagedResult<QuestionAdminListItemDto>> Handle(GetQuestionsListQuery request, CancellationToken ct)
     {
@@ -31,21 +37,34 @@ public class GetQuestionsListHandler : IRequestHandler<GetQuestionsListQuery, Pa
 
         var total = await query.CountAsync(ct);
 
-        var items = await query
+        var rows = await query
             .OrderByDescending(q => q.UpdatedAt)
             .Skip((page - 1) * size)
             .Take(size)
-            .Select(q => new QuestionAdminListItemDto(
+            .Select(q => new
+            {
                 q.Id,
                 q.TopicId,
                 q.ImageKey,
                 q.IsActive,
-                q.Translations
+                DefaultText = q.Translations
                     .OrderBy(t => t.LanguageCode == Languages.Default ? 0 : 1)
                     .Select(t => t.Text)
                     .FirstOrDefault() ?? "(no translation)",
-                q.Answers.Count))
+                AnswersCount = q.Answers.Count
+            })
             .ToListAsync(ct);
+
+        var items = rows
+            .Select(r => new QuestionAdminListItemDto(
+                r.Id,
+                r.TopicId,
+                r.ImageKey,
+                r.ImageKey is not null ? _storage.GetPublicUrl(r.ImageKey) : null,
+                r.IsActive,
+                r.DefaultText,
+                r.AnswersCount))
+            .ToList();
 
         return new PagedResult<QuestionAdminListItemDto>(items, page, size, total);
     }

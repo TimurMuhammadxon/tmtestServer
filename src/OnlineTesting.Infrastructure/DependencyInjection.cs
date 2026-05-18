@@ -1,4 +1,5 @@
 using System.Text;
+using Amazon.S3;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -7,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using OnlineTesting.Application.Common.Interfaces;
 using OnlineTesting.Infrastructure.Authentication;
 using OnlineTesting.Infrastructure.Persistence;
+using OnlineTesting.Infrastructure.Storage;
 using OnlineTesting.Infrastructure.Subscription;
 
 namespace OnlineTesting.Infrastructure;
@@ -20,6 +22,7 @@ public static class DependencyInjection
         AddPersistence(services, configuration);
         AddAuthentication(services, configuration);
         AddTelegram(services, configuration);
+        AddStorage(services, configuration);
 
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
@@ -88,6 +91,28 @@ public static class DependencyInjection
                     }
                 };
             });
+    }
+
+    private static void AddStorage(IServiceCollection services, IConfiguration configuration)
+    {
+        var section = configuration.GetSection(StorageOptions.SectionName);
+        services.Configure<StorageOptions>(section);
+
+        var opts = section.Get<StorageOptions>()
+            ?? throw new InvalidOperationException("Storage section is not configured.");
+
+        var s3Config = new AmazonS3Config
+        {
+            ServiceURL = $"{(opts.UseHttps ? "https" : "http")}://{opts.Endpoint}",
+            ForcePathStyle = true,
+            AuthenticationRegion = "us-east-1"
+        };
+
+        services.AddSingleton<IAmazonS3>(_ =>
+            new AmazonS3Client(opts.AccessKey, opts.SecretKey, s3Config));
+
+        services.AddSingleton<IStorageService, MinioStorageService>();
+        services.AddHostedService<BucketInitializer>();
     }
 
     private static void AddTelegram(IServiceCollection services, IConfiguration configuration)
