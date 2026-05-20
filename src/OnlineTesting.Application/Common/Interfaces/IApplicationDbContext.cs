@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using OnlineTesting.Domain.Progress;
+using OnlineTesting.Domain.Subscriptions;
 using OnlineTesting.Domain.Teacher;
 using OnlineTesting.Domain.Tests;
 using OnlineTesting.Domain.Users;
@@ -28,6 +29,8 @@ public interface IApplicationDbContext
     DbSet<Group> Groups { get; }
     DbSet<GroupMember> GroupMembers { get; }
     DbSet<TestLink> TestLinks { get; }
+    DbSet<SubscriptionPlan> SubscriptionPlans { get; }
+    DbSet<Subscription> Subscriptions { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);

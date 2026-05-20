@@ -22,6 +22,8 @@ builder.Services.AddAuthorization(options =>
         p.RequireRole(Roles.Owner, Roles.SuperAdmin, Roles.Admin));
     options.AddPolicy(Roles.Policies.TeacherAccess, p =>
         p.RequireRole(Roles.Owner, Roles.SuperAdmin, Roles.Admin, Roles.Teacher));
+    options.AddPolicy(Roles.Policies.OwnerAccess, p =>
+        p.RequireRole(Roles.Owner));
 });
 
 builder.Services.AddControllers();

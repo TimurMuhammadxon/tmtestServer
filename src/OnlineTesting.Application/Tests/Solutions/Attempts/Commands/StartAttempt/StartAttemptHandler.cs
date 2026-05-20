@@ -11,17 +11,28 @@ public class StartAttemptHandler : IRequestHandler<StartAttemptCommand, Guid>
 {
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUser _currentUser;
+    private readonly ISubscriptionChecker _subscription;
 
-    public StartAttemptHandler(IApplicationDbContext db, ICurrentUser currentUser)
+    public StartAttemptHandler(IApplicationDbContext db, ICurrentUser currentUser, ISubscriptionChecker subscription)
     {
         _db = db;
         _currentUser = currentUser;
+        _subscription = subscription;
     }
 
     public async Task<Guid> Handle(StartAttemptCommand request, CancellationToken ct)
     {
         var userId = _currentUser.UserId
             ?? throw new UnauthorizedException("User is not authenticated.");
+
+        var isDemoBilet = request.FlowType == FlowType.Bilet &&
+            await _db.Bilets
+                .Where(b => b.Id == request.BiletId!.Value)
+                .Select(b => b.IsDemo)
+                .FirstOrDefaultAsync(ct);
+
+        if (!isDemoBilet && !await _subscription.IsActiveAsync(userId, ct))
+            throw new ConflictException("An active subscription is required to start this test.");
 
         var questionIds = request.FlowType switch
         {

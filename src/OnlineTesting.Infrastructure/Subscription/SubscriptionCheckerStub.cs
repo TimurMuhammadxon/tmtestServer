@@ -1,6 +1,6 @@
 using OnlineTesting.Application.Common.Interfaces;
 
-namespace OnlineTesting.Infrastructure.Subscription;
+namespace OnlineTesting.Infrastructure.Subscriptions;
 
 public class SubscriptionCheckerStub : ISubscriptionChecker
 {

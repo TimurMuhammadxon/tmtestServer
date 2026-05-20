@@ -9,7 +9,7 @@ using OnlineTesting.Application.Common.Interfaces;
 using OnlineTesting.Infrastructure.Authentication;
 using OnlineTesting.Infrastructure.Persistence;
 using OnlineTesting.Infrastructure.Storage;
-using OnlineTesting.Infrastructure.Subscription;
+using OnlineTesting.Infrastructure.Subscriptions;
 
 namespace OnlineTesting.Infrastructure;
 
@@ -28,7 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<IJwtService, JwtService>();
         services.AddSingleton<IDbExceptionInspector, PostgresExceptionInspector>();
-        services.AddScoped<ISubscriptionChecker, SubscriptionCheckerStub>();
+        services.AddScoped<ISubscriptionChecker, SubscriptionChecker>();
 
         return services;
     }
