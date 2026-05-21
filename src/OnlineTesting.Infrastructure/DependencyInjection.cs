@@ -6,7 +6,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using OnlineTesting.Application.Common.Interfaces;
+using OnlineTesting.Application.Common.Settings;
 using OnlineTesting.Infrastructure.Authentication;
+using OnlineTesting.Infrastructure.Payments;
 using OnlineTesting.Infrastructure.Persistence;
 using OnlineTesting.Infrastructure.Storage;
 using OnlineTesting.Infrastructure.Subscriptions;
@@ -29,6 +31,11 @@ public static class DependencyInjection
         services.AddScoped<IJwtService, JwtService>();
         services.AddSingleton<IDbExceptionInspector, PostgresExceptionInspector>();
         services.AddScoped<ISubscriptionChecker, SubscriptionChecker>();
+        services.AddScoped<IPaymeWebhookProcessor, PaymeWebhookProcessor>();
+        services.AddScoped<IClickWebhookProcessor, ClickWebhookProcessor>();
+
+        services.Configure<PaymeSettings>(configuration.GetSection(PaymeSettings.SectionName));
+        services.Configure<ClickSettings>(configuration.GetSection(ClickSettings.SectionName));
 
         return services;
     }

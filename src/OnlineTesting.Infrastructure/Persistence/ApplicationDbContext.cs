@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using OnlineTesting.Application.Common.Interfaces;
+using OnlineTesting.Domain.Payments;
 using OnlineTesting.Domain.Progress;
 using OnlineTesting.Domain.Subscriptions;
 using OnlineTesting.Domain.Teacher;
@@ -35,6 +36,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<TestLink> TestLinks => Set<TestLink>();
     public DbSet<SubscriptionPlan> SubscriptionPlans => Set<SubscriptionPlan>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<PaymentOrder> PaymentOrders => Set<PaymentOrder>();
+    public DbSet<PaymeTransaction> PaymeTransactions => Set<PaymeTransaction>();
+    public DbSet<ClickTransaction> ClickTransactions => Set<ClickTransaction>();
 
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
         => Database.BeginTransactionAsync(cancellationToken);

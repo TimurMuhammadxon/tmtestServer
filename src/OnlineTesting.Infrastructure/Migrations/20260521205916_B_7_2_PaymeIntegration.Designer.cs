@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using OnlineTesting.Infrastructure.Persistence;
@@ -12,9 +13,11 @@ using OnlineTesting.Infrastructure.Persistence;
 namespace OnlineTesting.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260521205916_B_7_2_PaymeIntegration")]
+    partial class B_7_2_PaymeIntegration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,67 +25,6 @@ namespace OnlineTesting.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("OnlineTesting.Domain.Payments.ClickTransaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric(18,2)")
-                        .HasColumnName("amount");
-
-                    b.Property<string>("ClickTransactionId")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("click_transaction_id");
-
-                    b.Property<DateTime?>("CompleteTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("complete_time");
-
-                    b.Property<int>("Error")
-                        .HasColumnType("integer")
-                        .HasColumnName("error");
-
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("order_id");
-
-                    b.Property<long>("PrepareId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("prepare_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("PrepareId"));
-
-                    b.Property<DateTime>("PrepareTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("prepare_time");
-
-                    b.Property<int>("State")
-                        .HasColumnType("integer")
-                        .HasColumnName("state");
-
-                    b.HasKey("Id")
-                        .HasName("pk_click_transactions");
-
-                    b.HasIndex("ClickTransactionId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_click_transactions_click_id");
-
-                    b.HasIndex("OrderId")
-                        .HasDatabaseName("ix_click_transactions_order_id");
-
-                    b.HasIndex("PrepareId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_click_transactions_prepare_id");
-
-                    b.ToTable("click_transactions", (string)null);
-                });
 
             modelBuilder.Entity("OnlineTesting.Domain.Payments.PaymeTransaction", b =>
                 {

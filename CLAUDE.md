@@ -173,9 +173,34 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - Public endpoints: `GET /subscriptions/plans` (anonymous), `GET /subscriptions/my` (authenticated)
 - Tables: `subscription_plans` (seeded: 8 plans, price=0), `subscriptions`
 
+### ✅ B.7.2 — Payme Integration (done, 10 scenarios passed)
+- `PaymentOrder` entity: UserId, PlanId, AmountTiyin, Status (Pending/Paid/Cancelled), CreatedAt
+- `PaymeTransaction` entity: PaymeTransactionId (unique), OrderId, Amount, State (1/2/-1/-2), CreateTime/PerformTime/CancelTime (Unix ms), CancelReason
+- `POST /payments/payme/initiate` (Authorize) → creates PaymentOrder, returns checkoutUrl (base64-encoded Payme format)
+- `POST /payments/payme/webhook` (AllowAnonymous, manual Basic Auth: Paycom/MerchantKey) → JSON-RPC handler
+- All 6 methods implemented: CheckPerformTransaction, CreateTransaction, PerformTransaction, CancelTransaction, CheckTransaction, GetStatement
+- PerformTransaction auto-grants subscription (same logic as GrantSubscription) + role elevation
+- Idempotency on CreateTransaction and PerformTransaction
+- Cannot cancel completed transactions (error -31008)
+- Config: `appsettings.json → "Payme": { MerchantId, MerchantKey, CheckoutUrl }`
+- Price in DB (decimal, сумы) × 100 = тийин для Payme
+- Tables: `payment_orders`, `payme_transactions`
+
+### ✅ B.7.3 — Click Integration (done, 9 scenarios passed)
+- `ClickTransaction` entity: PrepareId (bigserial auto-increment → merchant_prepare_id), ClickTransactionId (unique), OrderId, Amount, State (Prepared/Completed/Cancelled), PrepareTime, CompleteTime, Error
+- `POST /payments/click/initiate` (Authorize) → creates PaymentOrder, returns Click checkout URL (amount in UZS)
+- `POST /payments/click/webhook` (AllowAnonymous) → JSON body with action=0 (Prepare) or action=1 (Complete)
+- Signature: MD5(click_trans_id + service_id + secret_key + merchant_trans_id + [prepare_id+] amount + action + sign_time)
+- action=0: validate order, create ClickTransaction, return merchant_prepare_id (auto-increment)
+- action=1: complete transaction, grant subscription + role elevation
+- Error codes: -1=bad sign, -2=wrong amount, -4=already paid, -5=order not found, -9=cancelled
+- Idempotency on both Prepare and Complete
+- Config: `appsettings.json → "Click": { ServiceId, MerchantId, SecretKey, CheckoutUrl }`
+- Amount in checkout URL in UZS (plan.Price); PaymentOrder stores tiyins (×100) consistent with Payme
+- Table: `click_transactions` (prepare_id GENERATED ALWAYS AS IDENTITY)
+
 ## Backlog (not started)
-- **B.7.2** — Payme integration
-- **B.7.3** — Click integration
+- Frontend
 
 ## Working agreement
 1. Architecture/discussion before code; no surprise refactors
