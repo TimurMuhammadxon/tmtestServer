@@ -11,8 +11,13 @@ namespace OnlineTesting.Infrastructure.Payments;
 public class PaymeWebhookProcessor : IPaymeWebhookProcessor
 {
     private readonly IApplicationDbContext _db;
+    private readonly IDbExceptionInspector _inspector;
 
-    public PaymeWebhookProcessor(IApplicationDbContext db) => _db = db;
+    public PaymeWebhookProcessor(IApplicationDbContext db, IDbExceptionInspector inspector)
+    {
+        _db = db;
+        _inspector = inspector;
+    }
 
     public Task<object> ProcessAsync(string method, JsonElement p, CancellationToken ct) => method switch
     {
@@ -53,7 +58,20 @@ public class PaymeWebhookProcessor : IPaymeWebhookProcessor
 
         var tx = PaymeTransaction.Create(paymeId, orderId, amount, time);
         _db.PaymeTransactions.Add(tx);
-        await _db.SaveChangesAsync(ct);
+
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (_inspector.IsUniqueConstraintViolation(ex))
+        {
+            // Race: another request inserted the same paymeId first
+            var concurrent = await _db.PaymeTransactions
+                .FirstOrDefaultAsync(t => t.PaymeTransactionId == paymeId, ct);
+            if (concurrent?.State == PaymeTransactionState.Created)
+                return ToCreateResult(concurrent);
+            throw new PaymeRpcException(-31008, "Transaction is in an invalid state");
+        }
 
         return ToCreateResult(tx);
     }
@@ -77,10 +95,12 @@ public class PaymeWebhookProcessor : IPaymeWebhookProcessor
             ?? throw new PaymeRpcException(-31050, "Order not found");
 
         var performTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        // Grant before mutating state — if plan/user missing, state stays Created and Payme can retry
+        await GrantSubscriptionAsync(order, ct);
+
         tx.Complete(performTime);
         order.MarkPaid();
-
-        await GrantSubscriptionAsync(order, ct);
         await _db.SaveChangesAsync(ct);
 
         return ToPerformResult(tx);

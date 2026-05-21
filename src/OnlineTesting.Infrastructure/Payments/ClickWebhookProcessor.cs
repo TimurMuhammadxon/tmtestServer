@@ -17,11 +17,13 @@ public class ClickWebhookProcessor : IClickWebhookProcessor
 {
     private readonly IApplicationDbContext _db;
     private readonly ClickSettings _settings;
+    private readonly IDbExceptionInspector _inspector;
 
-    public ClickWebhookProcessor(IApplicationDbContext db, IOptions<ClickSettings> settings)
+    public ClickWebhookProcessor(IApplicationDbContext db, IOptions<ClickSettings> settings, IDbExceptionInspector inspector)
     {
         _db = db;
         _settings = settings.Value;
+        _inspector = inspector;
     }
 
     public Task<object> ProcessAsync(ClickWebhookRequest req, CancellationToken ct) =>
@@ -62,7 +64,20 @@ public class ClickWebhookProcessor : IClickWebhookProcessor
 
         var tx = ClickTransaction.Prepare(req.ClickTransId.ToString(), orderId, req.Amount);
         _db.ClickTransactions.Add(tx);
-        await _db.SaveChangesAsync(ct);
+
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (_inspector.IsUniqueConstraintViolation(ex))
+        {
+            // Race: another request inserted the same click_trans_id first
+            var concurrent = await _db.ClickTransactions
+                .FirstOrDefaultAsync(t => t.ClickTransactionId == req.ClickTransId.ToString(), ct);
+            if (concurrent is not null)
+                return BuildPrepareResult(req, concurrent.PrepareId);
+            return BuildError(req, 0, -8, "Error in request from click");
+        }
 
         return BuildPrepareResult(req, tx.PrepareId);
     }
@@ -106,9 +121,18 @@ public class ClickWebhookProcessor : IClickWebhookProcessor
         if (order.Status == PaymentOrderStatus.Cancelled)
             return BuildError(req, tx.PrepareId, -9, "Transaction cancelled");
 
+        // Grant before mutating state — if data integrity is violated, state stays Prepared and Click can retry
+        try
+        {
+            await GrantSubscriptionAsync(order, ct);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BuildError(req, tx.PrepareId, -7, ex.Message);
+        }
+
         tx.Complete();
         order.MarkPaid();
-        await GrantSubscriptionAsync(order, ct);
         await _db.SaveChangesAsync(ct);
 
         return BuildCompleteResult(req, tx.PrepareId);
