@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authorization;
+using OnlineTesting.API.Authorization;
 using OnlineTesting.API.Localization;
 using OnlineTesting.API.Middleware;
 using OnlineTesting.API.Services;
@@ -24,7 +26,12 @@ builder.Services.AddAuthorization(options =>
         p.RequireRole(Roles.Owner, Roles.SuperAdmin, Roles.Admin, Roles.Teacher));
     options.AddPolicy(Roles.Policies.OwnerAccess, p =>
         p.RequireRole(Roles.Owner));
+    options.AddPolicy(Roles.Policies.TeacherSubscriptionAccess, p =>
+        p.RequireRole(Roles.Owner, Roles.SuperAdmin, Roles.Admin, Roles.Teacher)
+         .AddRequirements(new TeacherSubscriptionRequirement()));
 });
+
+builder.Services.AddScoped<IAuthorizationHandler, TeacherSubscriptionHandler>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

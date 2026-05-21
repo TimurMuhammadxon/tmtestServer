@@ -160,8 +160,22 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - Access: subscription check + MaxAttempts + ExpiresAt; GroupId is metadata only (no access restriction)
 - Tables: `test_links` (uuid[] for TopicIds), `attempts.test_link_id` nullable FK
 
+### ✅ B.7.1 — Subscription Core (done, scenarios passed + TeacherSubscriptionAccess verified)
+- `SubscriptionPlan` entity: Type (Student=1/Teacher=2), Duration (TwoWeeks/OneMonth/TwoMonths/ThreeMonths), Price, IsActive
+- `Subscription` entity: UserId, PlanId, StartsAt, ExpiresAt — one row per user (unique index on user_id)
+- Extension logic: `Max(UtcNow, currentExpiresAt) + duration` (calendar months via AddMonths)
+- Teacher plan + Student role → auto-elevate to Teacher; role never demoted on expiry
+- `TeacherSubscriptionAccess` policy: Owner/SuperAdmin/Admin always pass; Teacher must have active Teacher-type subscription
+- Applied to: `TeacherGroupsController`, `TeacherTestLinksController`
+- Free access: demo bilet only; all other flows require active subscription
+- Owner can manually grant/extend any user's subscription via `POST /admin/users/{userId}/subscription`
+- Admin endpoints: `GET/PATCH /admin/subscription-plans` (price, toggle), `POST /admin/users/{userId}/subscription`
+- Public endpoints: `GET /subscriptions/plans` (anonymous), `GET /subscriptions/my` (authenticated)
+- Tables: `subscription_plans` (seeded: 8 plans, price=0), `subscriptions`
+
 ## Backlog (not started)
-- **B.7** — Subscription module + payments
+- **B.7.2** — Payme integration
+- **B.7.3** — Click integration
 
 ## Working agreement
 1. Architecture/discussion before code; no surprise refactors

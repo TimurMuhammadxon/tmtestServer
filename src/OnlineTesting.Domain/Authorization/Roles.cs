@@ -13,5 +13,6 @@ public static class Roles
         public const string ContentManagement = nameof(ContentManagement);
         public const string TeacherAccess = nameof(TeacherAccess);
         public const string OwnerAccess = nameof(OwnerAccess);
+        public const string TeacherSubscriptionAccess = nameof(TeacherSubscriptionAccess);
     }
 }

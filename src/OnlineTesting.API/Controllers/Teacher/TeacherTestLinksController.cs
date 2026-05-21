@@ -11,7 +11,7 @@ namespace OnlineTesting.API.Controllers.Teacher;
 
 [ApiController]
 [Route("teacher/test-links")]
-[Authorize(Policy = Roles.Policies.TeacherAccess)]
+[Authorize(Policy = Roles.Policies.TeacherSubscriptionAccess)]
 public class TeacherTestLinksController : ControllerBase
 {
     private readonly ISender _sender;

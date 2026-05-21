@@ -12,7 +12,7 @@ namespace OnlineTesting.API.Controllers.Teacher;
 
 [ApiController]
 [Route("teacher/groups")]
-[Authorize(Policy = Roles.Policies.TeacherAccess)]
+[Authorize(Policy = Roles.Policies.TeacherSubscriptionAccess)]
 public class TeacherGroupsController : ControllerBase
 {
     private readonly ISender _sender;
