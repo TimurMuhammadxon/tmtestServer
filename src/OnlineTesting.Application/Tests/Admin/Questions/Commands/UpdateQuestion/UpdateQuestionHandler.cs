@@ -23,8 +23,6 @@ public class UpdateQuestionHandler : IRequestHandler<UpdateQuestionCommand>
         if (!topicExists)
             throw new NotFoundException($"Topic '{request.TopicId}' not found.");
 
-        question.UpdateBasics(request.TopicId, request.ImageKey);
-
         var drafts = request.Answers.Select(a => new AnswerDraft(
             a.OrderIndex,
             a.IsCorrect,
@@ -33,8 +31,20 @@ public class UpdateQuestionHandler : IRequestHandler<UpdateQuestionCommand>
                 .ToList()
         )).ToList();
 
-        question.ReplaceAnswers(drafts);
+        await using var tx = await _db.BeginTransactionAsync(ct);
 
+        var oldAnswers = await _db.Answers
+            .Where(a => a.QuestionId == request.Id)
+            .ToListAsync(ct);
+
+        _db.Answers.RemoveRange(oldAnswers);
         await _db.SaveChangesAsync(ct);
+
+        question.UpdateBasics(request.TopicId, request.ImageKey);
+        question.ReplaceAnswers(drafts);
+        _db.Answers.AddRange(question.Answers);
+        await _db.SaveChangesAsync(ct);
+
+        await tx.CommitAsync(ct);
     }
 }
