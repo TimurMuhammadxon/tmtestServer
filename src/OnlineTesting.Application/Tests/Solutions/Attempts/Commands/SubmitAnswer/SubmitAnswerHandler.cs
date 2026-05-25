@@ -44,6 +44,13 @@ public class SubmitAnswerHandler : IRequestHandler<SubmitAnswerCommand, SubmitAn
             .FirstOrDefaultAsync(a => a.Id == request.AnswerId && a.QuestionId == request.QuestionId, ct)
             ?? throw new NotFoundException($"Answer '{request.AnswerId}' not found for this question.");
 
+        var correctAnswerId = answer.IsCorrect
+            ? answer.Id
+            : await _db.Answers
+                .Where(a => a.QuestionId == request.QuestionId && a.IsCorrect)
+                .Select(a => a.Id)
+                .FirstOrDefaultAsync(ct);
+
         var isFinished = attempt.Answer(request.QuestionId, request.AnswerId, answer.IsCorrect);
 
         await _db.SaveChangesAsync(ct);
@@ -69,6 +76,7 @@ public class SubmitAnswerHandler : IRequestHandler<SubmitAnswerCommand, SubmitAn
 
         return new SubmitAnswerResult(
             answer.IsCorrect,
+            correctAnswerId,
             isFinished,
             attempt.Status.ToString(),
             isFinished ? attempt.CorrectCount : null,

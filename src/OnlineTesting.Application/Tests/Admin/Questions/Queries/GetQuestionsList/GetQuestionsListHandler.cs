@@ -51,7 +51,19 @@ public class GetQuestionsListHandler : IRequestHandler<GetQuestionsListQuery, Pa
                     .OrderBy(t => t.LanguageCode == Languages.Default ? 0 : 1)
                     .Select(t => t.Text)
                     .FirstOrDefault() ?? "(no translation)",
-                AnswersCount = q.Answers.Count
+                Answers = q.Answers
+                    .OrderBy(a => a.OrderIndex)
+                    .Select(a => new
+                    {
+                        a.Id,
+                        a.OrderIndex,
+                        a.IsCorrect,
+                        Text = a.Translations
+                            .OrderBy(t => t.LanguageCode == Languages.Default ? 0 : 1)
+                            .Select(t => t.Text)
+                            .FirstOrDefault() ?? "",
+                    })
+                    .ToList(),
             })
             .ToListAsync(ct);
 
@@ -63,7 +75,7 @@ public class GetQuestionsListHandler : IRequestHandler<GetQuestionsListQuery, Pa
                 r.ImageKey is not null ? _storage.GetPublicUrl(r.ImageKey) : null,
                 r.IsActive,
                 r.DefaultText,
-                r.AnswersCount))
+                r.Answers.Select(a => new AnswerListItemDto(a.Id, a.OrderIndex, a.IsCorrect, a.Text)).ToList()))
             .ToList();
 
         return new PagedResult<QuestionAdminListItemDto>(items, page, size, total);

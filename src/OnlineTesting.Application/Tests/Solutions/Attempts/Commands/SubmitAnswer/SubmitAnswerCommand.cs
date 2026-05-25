@@ -7,6 +7,7 @@ public record SubmitAnswerCommand(Guid AttemptId, Guid QuestionId, Guid AnswerId
 
 public record SubmitAnswerResult(
     bool IsCorrect,
+    Guid CorrectAnswerId,
     bool IsFinished,
     string Status,
     int? CorrectCount,

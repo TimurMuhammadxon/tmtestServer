@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using OnlineTesting.Application.Common.Exceptions;
 using OnlineTesting.Application.Common.Interfaces;
 using OnlineTesting.Domain.Tests;
+using OnlineTesting.Domain.Users;
 
 namespace OnlineTesting.Application.Tests.Solutions.Attempts.Commands.StartAttempt;
 
@@ -31,7 +32,14 @@ public class StartAttemptHandler : IRequestHandler<StartAttemptCommand, Guid>
                 .Select(b => b.IsDemo)
                 .FirstOrDefaultAsync(ct);
 
-        if (!isDemoBilet && !await _subscription.IsActiveAsync(userId, ct))
+        var userRole = await _db.Users
+            .Where(u => u.Id == userId)
+            .Select(u => u.Role)
+            .FirstOrDefaultAsync(ct);
+
+        var isPrivileged = userRole is Role.Teacher or Role.Admin or Role.SuperAdmin or Role.Owner;
+
+        if (!isDemoBilet && !isPrivileged && !await _subscription.IsActiveAsync(userId, ct))
             throw new ConflictException("An active subscription is required to start this test.");
 
         var questionIds = request.FlowType switch

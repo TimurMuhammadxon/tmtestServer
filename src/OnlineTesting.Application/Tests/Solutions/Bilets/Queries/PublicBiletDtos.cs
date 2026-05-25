@@ -3,7 +3,8 @@ namespace OnlineTesting.Application.Tests.Solutions.Bilets.Queries;
 public record PublicBiletListItemDto(
     Guid Id,
     int Number,
-    bool IsDemo
+    bool IsDemo,
+    int QuestionCount
 );
 
 public record PublicBiletDetailsDto(

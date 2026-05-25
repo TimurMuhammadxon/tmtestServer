@@ -9,6 +9,8 @@ public record GetQuestionsListQuery(
     int Page = 1,
     int PageSize = 20) : IRequest<PagedResult<QuestionAdminListItemDto>>;
 
+public record AnswerListItemDto(Guid Id, int OrderIndex, bool IsCorrect, string Text);
+
 public record QuestionAdminListItemDto(
     Guid Id,
     Guid TopicId,
@@ -16,4 +18,4 @@ public record QuestionAdminListItemDto(
     string? ImageUrl,
     bool IsActive,
     string DefaultText,
-    int AnswersCount);
+    IReadOnlyList<AnswerListItemDto> Answers);

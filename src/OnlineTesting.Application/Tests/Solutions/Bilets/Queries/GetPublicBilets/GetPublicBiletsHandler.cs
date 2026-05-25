@@ -27,7 +27,7 @@ public class GetPublicBiletsHandler
 
         return await query
             .OrderBy(b => b.Number)
-            .Select(b => new PublicBiletListItemDto(b.Id, b.Number, b.IsDemo))
+            .Select(b => new PublicBiletListItemDto(b.Id, b.Number, b.IsDemo, b.BiletQuestions.Count))
             .ToListAsync(ct);
     }
 }
