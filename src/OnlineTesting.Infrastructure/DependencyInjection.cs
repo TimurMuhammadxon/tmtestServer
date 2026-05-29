@@ -24,6 +24,7 @@ public static class DependencyInjection
         AddPersistence(services, configuration);
         AddAuthentication(services, configuration);
         AddTelegram(services, configuration);
+        AddGoogle(services, configuration);
         AddStorage(services, configuration);
 
         services.AddScoped<IPasswordHasher, PasswordHasher>();
@@ -120,6 +121,20 @@ public static class DependencyInjection
 
         services.AddSingleton<IStorageService, MinioStorageService>();
         services.AddHostedService<BucketInitializer>();
+    }
+
+    private static void AddGoogle(IServiceCollection services, IConfiguration configuration)
+    {
+        var section = configuration.GetSection(GoogleOptions.SectionName);
+        services.Configure<GoogleOptions>(section);
+
+        var options = section.Get<GoogleOptions>()
+            ?? throw new InvalidOperationException("Google section is not configured.");
+
+        if (string.IsNullOrWhiteSpace(options.ClientId))
+            throw new InvalidOperationException("Google:ClientId must be configured.");
+
+        services.AddSingleton<IGoogleAuthValidator, GoogleAuthValidator>();
     }
 
     private static void AddTelegram(IServiceCollection services, IConfiguration configuration)
