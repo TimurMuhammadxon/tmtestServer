@@ -9,6 +9,8 @@ public class User : Entity
     private readonly List<ExternalLogin> _externalLogins = new();
 
     public string Email { get; private set; } = string.Empty;
+    public string? FirstName { get; private set; }
+    public string? LastName { get; private set; }
     public string? PasswordHash { get; private set; }
     public bool EmailConfirmed { get; private set; }
     public Role Role { get; private set; }
@@ -58,17 +60,22 @@ public class User : Entity
     /// Создание юзера через external провайдера (Telegram и т.д.).
     /// Пароля нет, email — placeholder, EmailConfirmed = true (provider уже верифицировал identity).
     /// </summary>
-    public static User CreateFromExternal(string placeholderEmail, Role role)
+    public static User CreateFromExternal(string placeholderEmail, Role role,
+        string? firstName = null, string? lastName = null)
     {
         if (string.IsNullOrWhiteSpace(placeholderEmail))
             throw new ArgumentException("Placeholder email is required.", nameof(placeholderEmail));
 
-        return new User(
+        var user = new User(
             Guid.NewGuid(),
             placeholderEmail.Trim().ToLowerInvariant(),
             passwordHash: null,
             emailConfirmed: true,
             role);
+
+        user.FirstName = firstName?.Trim();
+        user.LastName = lastName?.Trim();
+        return user;
     }
 
     public void ChangePassword(string newPasswordHash)
@@ -83,4 +90,16 @@ public class User : Entity
     public void Activate() => IsActive = true;
     public void ConfirmEmail() => EmailConfirmed = true;
     public void SetRole(Role role) => Role = role;
+    public void SetName(string? firstName, string? lastName)
+    {
+        FirstName = firstName?.Trim();
+        LastName = lastName?.Trim();
+    }
+
+    public void SetCredentials(string email, string passwordHash)
+    {
+        Email = email;
+        PasswordHash = passwordHash;
+        EmailConfirmed = true;
+    }
 }

@@ -14,7 +14,7 @@ public record AttemptDto(
 public record AttemptQuestionDto(
     int OrderIndex,
     Guid QuestionId,
-    string? ImageKey,
+    string? ImageUrl,
     string Text,
     string Language,
     bool IsFallback,

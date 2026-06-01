@@ -11,12 +11,14 @@ public class GetAttemptHandler : IRequestHandler<GetAttemptQuery, AttemptDto>
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUser _currentUser;
     private readonly ILanguageContext _lang;
+    private readonly IStorageService _storage;
 
-    public GetAttemptHandler(IApplicationDbContext db, ICurrentUser currentUser, ILanguageContext lang)
+    public GetAttemptHandler(IApplicationDbContext db, ICurrentUser currentUser, ILanguageContext lang, IStorageService storage)
     {
         _db = db;
         _currentUser = currentUser;
         _lang = lang;
+        _storage = storage;
     }
 
     public async Task<AttemptDto> Handle(GetAttemptQuery request, CancellationToken ct)
@@ -72,10 +74,12 @@ public class GetAttemptHandler : IRequestHandler<GetAttemptQuery, AttemptDto>
                 return new AttemptAnswerDto(a.Id, a.OrderIndex, aText, aLang, aFallback, a.IsCorrect);
             }).ToList();
 
+            var imageUrl = q.ImageKey is not null ? _storage.GetPublicUrl(q.ImageKey) : null;
+
             return new AttemptQuestionDto(
                 aq.OrderIndex,
                 aq.QuestionId,
-                q.ImageKey,
+                imageUrl,
                 qText,
                 qLang,
                 qFallback,

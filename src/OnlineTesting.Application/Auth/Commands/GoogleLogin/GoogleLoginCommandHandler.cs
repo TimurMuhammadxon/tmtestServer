@@ -59,6 +59,7 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Aut
 
     private async Task<User> FindOrCreateUserAsync(GoogleAuthData authData, CancellationToken ct)
     {
+        // Уже входил через Google раньше
         var existing = await _db.ExternalLogins
             .Include(e => e.User)
             .FirstOrDefaultAsync(e =>
@@ -68,13 +69,36 @@ public class GoogleLoginCommandHandler : IRequestHandler<GoogleLoginCommand, Aut
         if (existing is not null)
             return existing.User;
 
-        var user = User.CreateFromExternal(authData.Email, Role.Student);
+        // Email уже зарегистрирован (email/password) — привязываем Google к существующему аккаунту
+        var existingUser = await _db.Users
+            .FirstOrDefaultAsync(u => u.Email == authData.Email, ct);
+
+        if (existingUser is not null)
+        {
+            // Обновим имя если ещё не заполнено
+            if (existingUser.FirstName is null && existingUser.LastName is null)
+                existingUser.SetName(authData.FirstName, authData.LastName);
+
+            var link = ExternalLogin.Link(
+                existingUser.Id,
+                ExternalLoginProvider.Google,
+                authData.ExternalUserId,
+                authData.FirstName);
+
+            _db.ExternalLogins.Add(link);
+            await _db.SaveChangesAsync(ct);
+            return existingUser;
+        }
+
+        // Новый пользователь
+        var user = User.CreateFromExternal(authData.Email, Role.Student,
+            authData.FirstName, authData.LastName);
 
         var external = ExternalLogin.Link(
             user.Id,
             ExternalLoginProvider.Google,
             authData.ExternalUserId,
-            authData.Name);
+            authData.FirstName);
 
         _db.Users.Add(user);
         _db.ExternalLogins.Add(external);

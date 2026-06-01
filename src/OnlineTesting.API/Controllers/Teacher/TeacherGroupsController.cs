@@ -5,6 +5,7 @@ using OnlineTesting.Application.Teacher.Groups.Commands.CreateGroup;
 using OnlineTesting.Application.Teacher.Groups.Commands.DeleteGroup;
 using OnlineTesting.Application.Teacher.Groups.Commands.RemoveMember;
 using OnlineTesting.Application.Teacher.Groups.Queries.GetGroupMembers;
+using OnlineTesting.Application.Teacher.Groups.Queries.GetGroupMemberStats;
 using OnlineTesting.Application.Teacher.Groups.Queries.GetGroups;
 using OnlineTesting.Domain.Authorization;
 
@@ -46,4 +47,8 @@ public class TeacherGroupsController : ControllerBase
         await _sender.Send(new RemoveMemberCommand(id, userId), ct);
         return NoContent();
     }
+
+    [HttpGet("{id:guid}/stats")]
+    public Task<IReadOnlyList<GroupMemberStatsDto>> GetStats(Guid id, CancellationToken ct)
+        => _sender.Send(new GetGroupMemberStatsQuery(id), ct);
 }

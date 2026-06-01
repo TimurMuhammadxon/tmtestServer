@@ -34,6 +34,7 @@ public class GoogleAuthValidator : IGoogleAuthValidator
         return new GoogleAuthData(
             ExternalUserId: payload.Subject,
             Email: payload.Email,
-            Name: payload.Name);
+            FirstName: payload.GivenName,
+            LastName: payload.FamilyName);
     }
 }

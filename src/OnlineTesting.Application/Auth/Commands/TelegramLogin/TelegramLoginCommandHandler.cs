@@ -69,7 +69,8 @@ public class TelegramLoginCommandHandler : IRequestHandler<TelegramLoginCommand,
             return existing.User;
 
         var placeholderEmail = $"tg_{authData.ExternalUserId}@telegram.local";
-        var user = User.CreateFromExternal(placeholderEmail, Role.Student);
+        var user = User.CreateFromExternal(placeholderEmail, Role.Student,
+            authData.FirstName, authData.LastName);
 
         var external = ExternalLogin.Link(
             user.Id,

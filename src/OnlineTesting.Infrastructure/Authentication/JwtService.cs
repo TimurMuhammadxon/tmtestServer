@@ -26,8 +26,13 @@ public class JwtService : IJwtService
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new(ClaimTypes.Role, user.Role.ToString())
+            new(ClaimTypes.Role, user.Role.ToString()),
         };
+
+        if (!string.IsNullOrWhiteSpace(user.FirstName))
+            claims.Add(new(JwtRegisteredClaimNames.GivenName, user.FirstName));
+        if (!string.IsNullOrWhiteSpace(user.LastName))
+            claims.Add(new(JwtRegisteredClaimNames.FamilyName, user.LastName));
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
