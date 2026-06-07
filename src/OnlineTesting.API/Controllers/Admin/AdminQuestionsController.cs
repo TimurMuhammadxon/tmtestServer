@@ -54,7 +54,7 @@ public class AdminQuestionsController : ControllerBase
         [FromBody] UpdateQuestionBody body,
         CancellationToken ct)
     {
-        await _sender.Send(new UpdateQuestionCommand(id, body.TopicId, body.ImageKey, body.Answers), ct);
+        await _sender.Send(new UpdateQuestionCommand(id, body.TopicId, body.Answers), ct);
         return NoContent();
     }
 
@@ -125,6 +125,6 @@ public class AdminQuestionsController : ControllerBase
         return NoContent();
     }
 
-    public record UpdateQuestionBody(Guid TopicId, string? ImageKey, List<AnswerInputDto> Answers);
+    public record UpdateQuestionBody(Guid TopicId, List<AnswerInputDto> Answers);
     public record UpsertQuestionTranslationBody(string Text, string? Explanation);
 }

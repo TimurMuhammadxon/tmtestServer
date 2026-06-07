@@ -54,12 +54,11 @@ public sealed class Question : Entity
         return q;
     }
 
-    public void UpdateBasics(Guid topicId, string? imageKey)
+    public void UpdateBasics(Guid topicId)
     {
         if (topicId == Guid.Empty)
             throw new ArgumentException("TopicId is required.", nameof(topicId));
         TopicId = topicId;
-        ImageKey = string.IsNullOrWhiteSpace(imageKey) ? null : imageKey;
         Touch();
     }
 

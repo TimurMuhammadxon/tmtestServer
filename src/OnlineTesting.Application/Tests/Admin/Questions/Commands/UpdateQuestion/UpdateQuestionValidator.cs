@@ -9,7 +9,6 @@ public class UpdateQuestionValidator : AbstractValidator<UpdateQuestionCommand>
     {
         RuleFor(x => x.Id).NotEmpty();
         RuleFor(x => x.TopicId).NotEmpty();
-        RuleFor(x => x.ImageKey).MaximumLength(500);
 
         RuleFor(x => x.Answers)
             .NotEmpty()

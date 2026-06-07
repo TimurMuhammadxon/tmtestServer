@@ -6,5 +6,4 @@ namespace OnlineTesting.Application.Tests.Admin.Questions.Commands.UpdateQuestio
 public record UpdateQuestionCommand(
     Guid Id,
     Guid TopicId,
-    string? ImageKey,
     List<AnswerInputDto> Answers) : IRequest;

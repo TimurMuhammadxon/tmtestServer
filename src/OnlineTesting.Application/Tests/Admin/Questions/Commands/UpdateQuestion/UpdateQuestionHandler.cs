@@ -40,7 +40,7 @@ public class UpdateQuestionHandler : IRequestHandler<UpdateQuestionCommand>
         _db.Answers.RemoveRange(oldAnswers);
         await _db.SaveChangesAsync(ct);
 
-        question.UpdateBasics(request.TopicId, request.ImageKey);
+        question.UpdateBasics(request.TopicId);
         question.ReplaceAnswers(drafts);
         _db.Answers.AddRange(question.Answers);
         await _db.SaveChangesAsync(ct);

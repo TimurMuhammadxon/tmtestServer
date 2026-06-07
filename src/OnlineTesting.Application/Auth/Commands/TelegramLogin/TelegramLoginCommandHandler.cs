@@ -44,6 +44,12 @@ public class TelegramLoginCommandHandler : IRequestHandler<TelegramLoginCommand,
 
         var accessToken = _jwt.GenerateAccessToken(user);
 
+        var oldTokens = await _db.RefreshTokens
+            .Where(t => t.UserId == user.Id && t.RevokedAt == null)
+            .ToListAsync(ct);
+        foreach (var old in oldTokens)
+            old.Revoke();
+
         var (raw, hash) = _refresh.Generate();
         var token = RefreshToken.Issue(
             user.Id,
