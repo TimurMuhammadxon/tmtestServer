@@ -14,7 +14,7 @@ public class Bilet : Entity
 
     public IReadOnlyCollection<BiletQuestion> BiletQuestions => _biletQuestions.AsReadOnly();
 
-    public const int RequiredQuestionsCount = 20;
+    public const int MinQuestionsCount = 1;
 
     private Bilet() { }
 
@@ -105,9 +105,9 @@ public class Bilet : Entity
         if (questionIds is null)
             throw new ArgumentNullException(nameof(questionIds));
 
-        if (questionIds.Count != RequiredQuestionsCount)
+        if (questionIds.Count < MinQuestionsCount)
             throw new ArgumentException(
-                $"Bilet must contain exactly {RequiredQuestionsCount} questions, got {questionIds.Count}.",
+                $"Bilet must contain at least {MinQuestionsCount} question(s), got {questionIds.Count}.",
                 nameof(questionIds));
 
         if (questionIds.Any(id => id == Guid.Empty))

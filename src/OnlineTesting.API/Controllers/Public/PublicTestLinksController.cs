@@ -14,6 +14,7 @@ public class PublicTestLinksController : ControllerBase
     private readonly ISender _sender;
     public PublicTestLinksController(ISender sender) => _sender = sender;
 
+    [AllowAnonymous]
     [HttpGet("{code}")]
     public Task<TestLinkInfoDto> GetInfo(string code, CancellationToken ct)
         => _sender.Send(new GetTestLinkInfoQuery(code), ct);
@@ -21,7 +22,7 @@ public class PublicTestLinksController : ControllerBase
     [HttpPost("{code}/start")]
     public async Task<IActionResult> Start(string code, CancellationToken ct)
     {
-        var attemptId = await _sender.Send(new StartTestLinkCommand(code), ct);
-        return Ok(new { attemptId });
+        var id = await _sender.Send(new StartTestLinkCommand(code), ct);
+        return Ok(new { id });
     }
 }

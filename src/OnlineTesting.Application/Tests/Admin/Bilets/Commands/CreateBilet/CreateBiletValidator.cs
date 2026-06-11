@@ -12,8 +12,8 @@ public class CreateBiletValidator : AbstractValidator<CreateBiletCommand>
 
         RuleFor(x => x.QuestionIds)
             .NotNull()
-            .Must(ids => ids != null && ids.Count == Bilet.RequiredQuestionsCount)
-                .WithMessage($"Bilet must contain exactly {Bilet.RequiredQuestionsCount} questions.")
+            .Must(ids => ids != null && ids.Count >= Bilet.MinQuestionsCount)
+                .WithMessage($"Bilet must contain at least {Bilet.MinQuestionsCount} question(s).")
             .Must(ids => ids == null || ids.All(id => id != Guid.Empty))
                 .WithMessage("Question ids cannot be empty.")
             .Must(ids => ids == null || ids.Distinct().Count() == ids.Count)

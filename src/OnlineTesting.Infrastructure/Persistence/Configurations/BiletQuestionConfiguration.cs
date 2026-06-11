@@ -16,7 +16,7 @@ public class BiletQuestionConfiguration : IEntityTypeConfiguration<BiletQuestion
 
         builder.ToTable(t => t.HasCheckConstraint(
             "ck_bilet_questions_order_range",
-            "order_index BETWEEN 1 AND 20"));
+            "order_index >= 1"));
 
         builder.HasIndex(bq => new { bq.BiletId, bq.OrderIndex })
             .IsUnique()
