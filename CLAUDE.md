@@ -152,12 +152,18 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - Tables: `teacher_applications`, `groups`, `group_members`
 - Fix: GetGroupMembers used OrderBy after Join with record constructor — moved OrderBy before Join
 
-### ✅ B.6.2 — Teacher Test Links (done, 10 scenarios passed in Swagger)
+### ✅ B.6.2 — Teacher Test Links (extended)
 - `TestLink` entity: TeacherId, Title, Code (8-char random), FlowType, BiletId, TopicIds (uuid[]), QuestionCount, GroupId (label only), MaxAttempts (default 1), ExpiresAt (default now+1d), IsActive
 - `Attempt.TestLinkId (Guid?)` added — test link attempts excluded from all student progress (dashboard, topics, errors, history, streak)
-- Teacher endpoints: `POST/GET /teacher/test-links`, `PATCH /{id}/deactivate`, `GET /{id}/results`
-- Public endpoints: `GET /test-links/{code}` (info + attemptsUsed), `POST /test-links/{code}/start` → attemptId
-- Access: subscription check + MaxAttempts + ExpiresAt; GroupId is metadata only (no access restriction)
+- Teacher endpoints: `POST/GET /teacher/test-links`, `PATCH /{id}` (update title/maxAttempts/expiresAt), `PATCH /{id}/activate`, `PATCH /{id}/deactivate`, `DELETE /{id}`, `GET /{id}/results`
+- Public endpoints: `GET /test-links/{code}` (AllowAnonymous, info + attemptsUsed + IsActive), `POST /test-links/{code}/start` → `{ id }`
+- Pagination: `GET /teacher/test-links?page=1&pageSize=20` returns `PagedResult<TestLinkListItemDto>`, newest first
+- Delete: checks TeacherId ownership; activate/deactivate toggle IsActive
+- Results: returns FirstName+LastName instead of Email; frontend shows Natija, Foiz (color-coded), Holat
+- Results copy: "Telegram uchun nusxalash" — formats results as text with emojis for sharing in groups
+- Telegram deep link: `https://t.me/{bot}/{appName}?startapp={code}`; start_param detected in LandingPage useEffect → navigate to `/t/{code}`
+- Subscription error on start: shown as user-friendly Uzbek message on TestLinkPublicPage
+- Back button on TestLinkPublicPage: navigates to /dashboard (auth) or / (guest)
 - Tables: `test_links` (uuid[] for TopicIds), `attempts.test_link_id` nullable FK
 
 ### ✅ B.7.1 — Subscription Core (done, scenarios passed + TeacherSubscriptionAccess verified)
@@ -171,7 +177,10 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - Owner can manually grant/extend any user's subscription via `POST /admin/users/{userId}/subscription`
 - Admin endpoints: `GET/PATCH /admin/subscription-plans` (price, toggle), `POST /admin/users/{userId}/subscription`
 - Public endpoints: `GET /subscriptions/plans` (anonymous), `GET /subscriptions/my` (authenticated)
-- Tables: `subscription_plans` (seeded: 8 plans, price=0), `subscriptions`
+- Tables: `subscription_plans` (seeded: 8 plans), `subscriptions`
+- Real prices set in DB: Student 30k/50k/70k/90k UZS, Teacher 60k/100k/140k/180k UZS
+- `SubscriptionChecker` (real impl) registered in DI — checks `ExpiresAt > UtcNow`
+- Frontend: expiry warning banner on DashboardPage when ≤3 days left (yellow) or expired (red)
 
 ### ✅ B.7.2 — Payme Integration (done, 10 scenarios passed)
 - `PaymentOrder` entity: UserId, PlanId, AmountTiyin, Status (Pending/Paid/Cancelled), CreatedAt
@@ -199,8 +208,27 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - Amount in checkout URL in UZS (plan.Price); PaymentOrder stores tiyins (×100) consistent with Payme
 - Table: `click_transactions` (prepare_id GENERATED ALWAYS AS IDENTITY)
 
+### ✅ B.8 — Admin Questions multilanguage (done)
+- Admin QuestionsPage now has 3 language tabs: uz-latn, uz-cyrl (new), ru
+- uz-cyrl tab: question text + explanation fields (was completely missing)
+- ru tab: added explanation field (was missing)
+- Answers: uz-cyrl text field added per answer
+- openEdit loads all 3 language translations; updateMutation saves all 3 via upsertTranslation
+- Explanations imported from osonprava.uz: 1176-1177 per language in question_translations
+- uz-cyrl answer translations: 3804/4088 imported from questions_uz_cyrl.json
+
+### ✅ B.9 — Data import (done)
+- Scraper: osonprava_scraper.js — XOR-decrypts blob files, saves questions+explanations for 3 langs
+- Compare: compare.js — bigram Jaccard similarity (threshold 0.88), matched 1178/1248 (94.4%)
+- Import: import_explanations.js — updated 3528 rows in question_translations
+- DB state: uz-latn 1248 questions + 1177 explanations + 4088 answers; uz-cyrl 1248 + 1176 + 3804; ru 1248 + 1176 + 4088
+
 ## Backlog (not started)
-- Frontend
+- Admin Dashboard statistics (total users, attempts, revenue)
+- Teacher Analytics (per-group stats, weak topics)
+- Student explanations in AttemptPage (data in DB, UI not built)
+- Payme/Click real keys (deploy without for now, grant subscriptions manually via admin)
+- Deployment (VPS eskiz.uz VPS3, Ubuntu 22.04, Docker)
 
 ## Working agreement
 1. Architecture/discussion before code; no surprise refactors
