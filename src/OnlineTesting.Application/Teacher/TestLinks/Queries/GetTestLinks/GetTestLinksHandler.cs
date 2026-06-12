@@ -2,10 +2,11 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using OnlineTesting.Application.Common.Exceptions;
 using OnlineTesting.Application.Common.Interfaces;
+using OnlineTesting.Application.Common.Models;
 
 namespace OnlineTesting.Application.Teacher.TestLinks.Queries.GetTestLinks;
 
-public class GetTestLinksHandler : IRequestHandler<GetTestLinksQuery, List<TestLinkListItemDto>>
+public class GetTestLinksHandler : IRequestHandler<GetTestLinksQuery, PagedResult<TestLinkListItemDto>>
 {
     private readonly IApplicationDbContext _db;
     private readonly ICurrentUser _currentUser;
@@ -16,15 +17,24 @@ public class GetTestLinksHandler : IRequestHandler<GetTestLinksQuery, List<TestL
         _currentUser = currentUser;
     }
 
-    public async Task<List<TestLinkListItemDto>> Handle(GetTestLinksQuery request, CancellationToken ct)
+    public async Task<PagedResult<TestLinkListItemDto>> Handle(GetTestLinksQuery request, CancellationToken ct)
     {
         var teacherId = _currentUser.UserId
             ?? throw new UnauthorizedException("User is not authenticated.");
 
-        var links = await _db.TestLinks
+        var page = Math.Max(1, request.Page);
+        var size = Math.Clamp(request.PageSize, 1, 100);
+
+        var query = _db.TestLinks
             .AsNoTracking()
             .Where(t => t.TeacherId == teacherId)
-            .OrderByDescending(t => t.CreatedAt)
+            .OrderByDescending(t => t.CreatedAt);
+
+        var total = await query.CountAsync(ct);
+
+        var links = await query
+            .Skip((page - 1) * size)
+            .Take(size)
             .ToListAsync(ct);
 
         var linkIds = links.Select(t => t.Id).ToList();
@@ -35,10 +45,12 @@ public class GetTestLinksHandler : IRequestHandler<GetTestLinksQuery, List<TestL
             .Select(g => new { LinkId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.LinkId, x => x.Count, ct);
 
-        return links.Select(t => new TestLinkListItemDto(
+        var items = links.Select(t => new TestLinkListItemDto(
             t.Id, t.Title, t.Code, t.FlowType.ToString(),
             t.GroupId, t.MaxAttempts, t.ExpiresAt, t.IsActive, t.CreatedAt,
             attemptCounts.GetValueOrDefault(t.Id, 0)
         )).ToList();
+
+        return new PagedResult<TestLinkListItemDto>(items, page, size, total);
     }
 }

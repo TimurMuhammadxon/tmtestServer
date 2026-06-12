@@ -12,7 +12,8 @@ public record TestLinkResultsDto(
 
 public record TestLinkResultItemDto(
     Guid UserId,
-    string Email,
+    string? FirstName,
+    string? LastName,
     Guid AttemptId,
     DateTime StartedAt,
     DateTime? FinishedAt,

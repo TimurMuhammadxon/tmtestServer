@@ -9,5 +9,6 @@ public record TestLinkInfoDto(
     string FlowType,
     int MaxAttempts,
     DateTime ExpiresAt,
-    int AttemptsUsed
+    int AttemptsUsed,
+    bool IsActive
 );

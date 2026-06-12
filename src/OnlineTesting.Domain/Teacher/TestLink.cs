@@ -52,7 +52,15 @@ public class TestLink : Entity
         };
     }
 
+    public void Activate() => IsActive = true;
     public void Deactivate() => IsActive = false;
+
+    public void Update(string title, int maxAttempts, DateTime expiresAt)
+    {
+        Title = title.Trim();
+        MaxAttempts = maxAttempts;
+        ExpiresAt = expiresAt;
+    }
 
     private static string GenerateCode()
     {

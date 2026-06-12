@@ -33,12 +33,13 @@ public class GetTestLinkResultsHandler : IRequestHandler<GetTestLinkResultsQuery
             .AsNoTracking()
             .Where(a => a.TestLinkId == request.TestLinkId)
             .OrderByDescending(a => a.StartedAt)
-            .Join(_db.Users, a => a.UserId, u => u.Id, (a, u) => new { a, u.Email })
+            .Join(_db.Users, a => a.UserId, u => u.Id, (a, u) => new { a, u.FirstName, u.LastName })
             .Select(x => new
             {
                 x.a.Id,
                 x.a.UserId,
-                x.Email,
+                x.FirstName,
+                x.LastName,
                 x.a.Status,
                 x.a.CorrectCount,
                 x.a.StartedAt,
@@ -49,7 +50,7 @@ public class GetTestLinkResultsHandler : IRequestHandler<GetTestLinkResultsQuery
 
         var resultDtos = results
             .Select(r => new TestLinkResultItemDto(
-                r.UserId, r.Email, r.Id,
+                r.UserId, r.FirstName, r.LastName, r.Id,
                 r.StartedAt, r.FinishedAt,
                 r.CorrectCount, r.TotalQuestions,
                 r.Status.ToString()))

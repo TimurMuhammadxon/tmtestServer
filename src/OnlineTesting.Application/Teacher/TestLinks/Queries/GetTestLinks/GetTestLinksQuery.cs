@@ -1,8 +1,9 @@
 using MediatR;
+using OnlineTesting.Application.Common.Models;
 
 namespace OnlineTesting.Application.Teacher.TestLinks.Queries.GetTestLinks;
 
-public record GetTestLinksQuery : IRequest<List<TestLinkListItemDto>>;
+public record GetTestLinksQuery(int Page, int PageSize) : IRequest<PagedResult<TestLinkListItemDto>>;
 
 public record TestLinkListItemDto(
     Guid Id,
