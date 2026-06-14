@@ -32,7 +32,14 @@ public class BucketInitializer : IHostedService
             _logger.LogInformation("Storage bucket '{Bucket}' created.", _options.BucketName);
         }
 
-        await SetPublicReadPolicyAsync(ct);
+        try
+        {
+            await SetPublicReadPolicyAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not set public-read policy on bucket '{Bucket}'. Images will be served via Nginx.", _options.BucketName);
+        }
     }
 
     public Task StopAsync(CancellationToken ct) => Task.CompletedTask;

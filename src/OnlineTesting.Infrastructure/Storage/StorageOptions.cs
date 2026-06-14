@@ -9,7 +9,9 @@ public class StorageOptions
     public string SecretKey { get; init; } = "";
     public string BucketName { get; init; } = "";
     public bool UseHttps { get; init; } = false;
+    public string? PublicUrl { get; init; }
+    public string? LocalPath { get; init; }
 
     public string PublicBaseUrl =>
-        $"{(UseHttps ? "https" : "http")}://{Endpoint}/{BucketName}";
+        PublicUrl ?? $"{(UseHttps ? "https" : "http")}://{Endpoint}/{BucketName}";
 }

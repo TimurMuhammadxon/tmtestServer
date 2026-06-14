@@ -119,8 +119,13 @@ public static class DependencyInjection
         services.AddSingleton<IAmazonS3>(_ =>
             new AmazonS3Client(opts.AccessKey, opts.SecretKey, s3Config));
 
-        services.AddSingleton<IStorageService, MinioStorageService>();
-        services.AddHostedService<BucketInitializer>();
+        if (!string.IsNullOrWhiteSpace(opts.LocalPath))
+            services.AddSingleton<IStorageService, FileSystemStorageService>();
+        else
+        {
+            services.AddSingleton<IStorageService, MinioStorageService>();
+            services.AddHostedService<BucketInitializer>();
+        }
     }
 
     private static void AddGoogle(IServiceCollection services, IConfiguration configuration)
