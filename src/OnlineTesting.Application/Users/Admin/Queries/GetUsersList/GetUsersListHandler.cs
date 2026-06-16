@@ -33,6 +33,8 @@ public class GetUsersListHandler : IRequestHandler<GetUsersListQuery, PagedResul
             {
                 u.Id,
                 u.Email,
+                u.FirstName,
+                u.LastName,
                 u.Role,
                 u.IsActive,
                 u.CreatedAt,
@@ -47,6 +49,8 @@ public class GetUsersListHandler : IRequestHandler<GetUsersListQuery, PagedResul
             .Select(r => new UserAdminDto(
                 r.Id,
                 r.Email,
+                r.FirstName,
+                r.LastName,
                 r.Role.ToString(),
                 r.IsActive,
                 r.CreatedAt,

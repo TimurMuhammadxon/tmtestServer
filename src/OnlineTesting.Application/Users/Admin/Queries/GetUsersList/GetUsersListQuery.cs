@@ -9,6 +9,8 @@ public record GetUsersListQuery(string? Search, int Page = 1, int PageSize = 20)
 public record UserAdminDto(
     Guid Id,
     string Email,
+    string? FirstName,
+    string? LastName,
     string Role,
     bool IsActive,
     DateTime CreatedAt,
