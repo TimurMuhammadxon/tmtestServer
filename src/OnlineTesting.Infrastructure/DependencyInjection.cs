@@ -12,6 +12,7 @@ using OnlineTesting.Infrastructure.Payments;
 using OnlineTesting.Infrastructure.Persistence;
 using OnlineTesting.Infrastructure.Storage;
 using OnlineTesting.Infrastructure.Subscriptions;
+using OnlineTesting.Infrastructure.Telegram;
 
 namespace OnlineTesting.Infrastructure;
 
@@ -37,6 +38,9 @@ public static class DependencyInjection
 
         services.Configure<PaymeSettings>(configuration.GetSection(PaymeSettings.SectionName));
         services.Configure<ClickSettings>(configuration.GetSection(ClickSettings.SectionName));
+
+        services.AddHttpClient();
+        services.AddHostedService<TelegramQuizService>();
 
         return services;
     }

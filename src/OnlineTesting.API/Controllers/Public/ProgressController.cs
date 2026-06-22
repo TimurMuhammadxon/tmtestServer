@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using OnlineTesting.Application.Common.Models;
 using OnlineTesting.Application.Progress.Queries.GetAttemptHistory;
 using OnlineTesting.Application.Progress.Queries.GetDashboard;
+using OnlineTesting.Application.Progress.Queries.GetErrorQuestionDetail;
 using OnlineTesting.Application.Progress.Queries.GetErrorsAnalysis;
 using OnlineTesting.Application.Progress.Queries.GetTopicsProgress;
 using OnlineTesting.Domain.Tests;
@@ -29,6 +30,10 @@ public class ProgressController : ControllerBase
     [HttpGet("errors")]
     public Task<List<ErrorAnalysisItemDto>> Errors(CancellationToken ct)
         => _sender.Send(new GetErrorsAnalysisQuery(), ct);
+
+    [HttpGet("errors/{questionId:guid}")]
+    public Task<ErrorQuestionDetailDto> ErrorDetail(Guid questionId, CancellationToken ct)
+        => _sender.Send(new GetErrorQuestionDetailQuery(questionId), ct);
 
     [HttpGet("history")]
     public Task<PagedResult<AttemptHistoryItemDto>> History(
