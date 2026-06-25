@@ -15,6 +15,7 @@ public class SubscriptionController : ControllerBase
 
     [HttpGet("plans")]
     [AllowAnonymous]
+    [ResponseCache(Duration = 600)]
     public Task<List<SubscriptionPlanDto>> GetPlans(CancellationToken ct)
         => _sender.Send(new GetPlansQuery(), ct);
 

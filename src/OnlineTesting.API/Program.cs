@@ -67,6 +67,7 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 
+builder.Services.AddResponseCaching();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -121,6 +122,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseResponseCaching();
 app.UseMiddleware<LanguageMiddleware>();
 app.MapControllers();
 

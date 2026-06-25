@@ -39,6 +39,7 @@ public static class DependencyInjection
         services.Configure<PaymeSettings>(configuration.GetSection(PaymeSettings.SectionName));
         services.Configure<ClickSettings>(configuration.GetSection(ClickSettings.SectionName));
 
+        services.AddMemoryCache();
         services.AddHttpClient();
         services.AddHostedService<TelegramQuizService>();
 
