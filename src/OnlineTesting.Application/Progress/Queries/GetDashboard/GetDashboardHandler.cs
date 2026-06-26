@@ -101,7 +101,7 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
                         topic.Id,
                         ProgressHelpers.GetTopicName(topic, _lang),
                         s.Total, s.Correct, acc,
-                        ProgressHelpers.GetGrade(s.Total, acc));
+                        ProgressHelpers.GetGrade(s.Total, acc, _lang.RequestedLanguage));
                 })
                 .Where(x => x is not null)
                 .ToList()!;

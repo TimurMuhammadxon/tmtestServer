@@ -52,7 +52,7 @@ public class GetTopicsProgressHandler : IRequestHandler<GetTopicsProgressQuery, 
                 topic.Id,
                 ProgressHelpers.GetTopicName(topic, _lang),
                 total, correct, acc,
-                ProgressHelpers.GetGrade(total, acc));
+                ProgressHelpers.GetGrade(total, acc, _lang.RequestedLanguage));
         }).ToList();
     }
 }
