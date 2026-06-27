@@ -17,6 +17,7 @@ public class PublicTopicsController : ControllerBase
 
     [AllowAnonymous]
     [HttpGet]
+    [ResponseCache(Duration = 300)]
     public Task<List<TopicStudentDto>> List(CancellationToken ct)
     {
         var guest = User.Identity?.IsAuthenticated != true;

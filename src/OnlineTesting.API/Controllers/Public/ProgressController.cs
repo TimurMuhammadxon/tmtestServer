@@ -20,14 +20,17 @@ public class ProgressController : ControllerBase
     public ProgressController(ISender sender) => _sender = sender;
 
     [HttpGet("dashboard")]
+    [ResponseCache(Duration = 30, Location = ResponseCacheLocation.Client)]
     public Task<DashboardDto> Dashboard(CancellationToken ct)
         => _sender.Send(new GetDashboardQuery(), ct);
 
     [HttpGet("topics")]
+    [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Client)]
     public Task<List<TopicProgressDto>> Topics(CancellationToken ct)
         => _sender.Send(new GetTopicsProgressQuery(), ct);
 
     [HttpGet("errors")]
+    [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Client)]
     public Task<List<ErrorAnalysisItemDto>> Errors(CancellationToken ct)
         => _sender.Send(new GetErrorsAnalysisQuery(), ct);
 

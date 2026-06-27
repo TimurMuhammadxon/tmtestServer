@@ -16,6 +16,7 @@ public class BiletsController : ControllerBase
     public BiletsController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet]
+    [ResponseCache(Duration = 300)]
     [ProducesResponseType(typeof(IReadOnlyList<PublicBiletListItemDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> List(CancellationToken ct)
     {
@@ -24,6 +25,7 @@ public class BiletsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [ResponseCache(Duration = 300)]
     [ProducesResponseType(typeof(PublicBiletDetailsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
