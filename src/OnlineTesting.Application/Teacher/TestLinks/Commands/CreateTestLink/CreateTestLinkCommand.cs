@@ -11,7 +11,8 @@ public record CreateTestLinkCommand(
     int? QuestionCount,
     Guid? GroupId,
     int MaxAttempts,
-    DateTime ExpiresAt
+    DateTime ExpiresAt,
+    bool ShowExplanations = false
 ) : IRequest<TestLinkDto>;
 
 public record TestLinkDto(
@@ -26,5 +27,6 @@ public record TestLinkDto(
     int MaxAttempts,
     DateTime ExpiresAt,
     bool IsActive,
+    bool ShowExplanations,
     DateTime CreatedAt
 );

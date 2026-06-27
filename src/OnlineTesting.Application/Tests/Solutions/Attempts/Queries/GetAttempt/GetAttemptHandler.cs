@@ -31,6 +31,8 @@ public class GetAttemptHandler : IRequestHandler<GetAttemptQuery, AttemptDto>
         if (attempt.UserId != _currentUser.UserId)
             throw new NotFoundException($"Attempt '{request.AttemptId}' not found.");
 
+        var showExplanations = await DetermineShowExplanations(attempt, ct);
+
         var attemptQuestions = await _db.AttemptQuestions
             .AsNoTracking()
             .Where(aq => aq.AttemptId == request.AttemptId)
@@ -64,6 +66,14 @@ public class GetAttemptHandler : IRequestHandler<GetAttemptQuery, AttemptDto>
             var (qText, qLang, qFallback) = ResolveText(
                 q.Translations.Select(t => (t.LanguageCode, t.Text)), requested, fallback);
 
+            string? explanation = null;
+            if (showExplanations)
+            {
+                explanation = q.Translations
+                    .FirstOrDefault(t => t.LanguageCode == requested)?.Explanation
+                    ?? q.Translations.FirstOrDefault(t => t.LanguageCode == fallback)?.Explanation;
+            }
+
             var qAnswers = answersByQuestion.TryGetValue(q.Id, out var list)
                 ? list : new();
 
@@ -86,6 +96,7 @@ public class GetAttemptHandler : IRequestHandler<GetAttemptQuery, AttemptDto>
                 aq.ChosenAnswerId,
                 aq.IsCorrect,
                 aq.AnsweredAt,
+                explanation,
                 answerDtos);
         }).ToList();
 
@@ -105,7 +116,24 @@ public class GetAttemptHandler : IRequestHandler<GetAttemptQuery, AttemptDto>
             attempt.CorrectCount,
             questionDtos.Count,
             remainingSeconds,
+            showExplanations,
             questionDtos);
+    }
+
+    private async Task<bool> DetermineShowExplanations(Attempt attempt, CancellationToken ct)
+    {
+        if (attempt.Flow == FlowType.Exam)
+            return false;
+
+        if (attempt.TestLinkId is not null)
+        {
+            var link = await _db.TestLinks
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Id == attempt.TestLinkId.Value, ct);
+            return link?.ShowExplanations ?? false;
+        }
+
+        return true;
     }
 
     private static (string Text, string Language, bool IsFallback) ResolveText(

@@ -30,7 +30,8 @@ public class CreateTestLinkHandler : IRequestHandler<CreateTestLinkCommand, Test
             request.QuestionCount,
             request.GroupId,
             request.MaxAttempts,
-            request.ExpiresAt);
+            request.ExpiresAt,
+            request.ShowExplanations);
 
         _db.TestLinks.Add(link);
         await _db.SaveChangesAsync(ct);
@@ -39,6 +40,6 @@ public class CreateTestLinkHandler : IRequestHandler<CreateTestLinkCommand, Test
             link.Id, link.Title, link.Code, link.FlowType.ToString(),
             link.BiletId, link.TopicIds, link.QuestionCount,
             link.GroupId, link.MaxAttempts, link.ExpiresAt,
-            link.IsActive, link.CreatedAt);
+            link.IsActive, link.ShowExplanations, link.CreatedAt);
     }
 }

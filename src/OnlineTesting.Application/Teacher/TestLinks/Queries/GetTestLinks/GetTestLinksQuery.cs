@@ -14,6 +14,7 @@ public record TestLinkListItemDto(
     int MaxAttempts,
     DateTime ExpiresAt,
     bool IsActive,
+    bool ShowExplanations,
     DateTime CreatedAt,
     int AttemptCount
 );

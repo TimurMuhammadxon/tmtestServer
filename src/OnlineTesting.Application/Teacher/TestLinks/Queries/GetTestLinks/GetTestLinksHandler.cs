@@ -47,7 +47,7 @@ public class GetTestLinksHandler : IRequestHandler<GetTestLinksQuery, PagedResul
 
         var items = links.Select(t => new TestLinkListItemDto(
             t.Id, t.Title, t.Code, t.FlowType.ToString(),
-            t.GroupId, t.MaxAttempts, t.ExpiresAt, t.IsActive, t.CreatedAt,
+            t.GroupId, t.MaxAttempts, t.ExpiresAt, t.IsActive, t.ShowExplanations, t.CreatedAt,
             attemptCounts.GetValueOrDefault(t.Id, 0)
         )).ToList();
 

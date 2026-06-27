@@ -22,6 +22,7 @@ public class TestLinkConfiguration : IEntityTypeConfiguration<TestLink>
         builder.Property(t => t.MaxAttempts).IsRequired();
         builder.Property(t => t.ExpiresAt).IsRequired();
         builder.Property(t => t.IsActive).IsRequired();
+        builder.Property(t => t.ShowExplanations).IsRequired().HasDefaultValue(false);
         builder.Property(t => t.CreatedAt).IsRequired();
 
         builder.HasIndex(t => t.Code)

@@ -19,6 +19,7 @@ public class TestLink : Entity
     public int MaxAttempts { get; private set; }
     public DateTime ExpiresAt { get; private set; }
     public bool IsActive { get; private set; }
+    public bool ShowExplanations { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
     private TestLink() { }
@@ -32,7 +33,8 @@ public class TestLink : Entity
         int? questionCount,
         Guid? groupId,
         int maxAttempts,
-        DateTime expiresAt)
+        DateTime expiresAt,
+        bool showExplanations = false)
     {
         return new TestLink
         {
@@ -48,6 +50,7 @@ public class TestLink : Entity
             MaxAttempts = maxAttempts,
             ExpiresAt = expiresAt,
             IsActive = true,
+            ShowExplanations = showExplanations,
             CreatedAt = DateTime.UtcNow
         };
     }

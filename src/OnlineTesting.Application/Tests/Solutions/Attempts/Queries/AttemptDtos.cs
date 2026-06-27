@@ -9,6 +9,7 @@ public record AttemptDto(
     int? CorrectCount,
     int TotalQuestions,
     int? RemainingSeconds,
+    bool ShowExplanations,
     IReadOnlyList<AttemptQuestionDto> Questions);
 
 public record AttemptQuestionDto(
@@ -21,6 +22,7 @@ public record AttemptQuestionDto(
     Guid? ChosenAnswerId,
     bool? IsCorrect,
     DateTime? AnsweredAt,
+    string? Explanation,
     IReadOnlyList<AttemptAnswerDto> Answers);
 
 public record AttemptAnswerDto(

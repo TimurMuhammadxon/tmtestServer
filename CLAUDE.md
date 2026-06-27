@@ -223,12 +223,39 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - Import: import_explanations.js — updated 3528 rows in question_translations
 - DB state: uz-latn 1248 questions + 1177 explanations + 4088 answers; uz-cyrl 1248 + 1176 + 3804; ru 1248 + 1176 + 4088
 
+### ✅ B.10 — Click Payment Activation (done)
+- Click credentials configured on production server: SERVICE_ID=106258, MERCHANT_ID=86930
+- Environment variables in `/opt/pravadrive/.env`: CLICK_SERVICE_ID, CLICK_MERCHANT_ID, CLICK_SECRET_KEY
+- Docker-compose maps them to Click__ServiceId, Click__MerchantId, Click__SecretKey, Click__CheckoutUrl
+- Webhook URLs set in merchant.click.uz cabinet: `https://pravadrive.uz/api/payments/click/webhook` (both Prepare and Complete)
+- Server IP (185.191.141.229) and domain (pravadrive.uz) sent to Click for firewall whitelist
+- Service status: "Не активен" — awaiting Click team activation
+- Payment flow: user selects plan → Click checkout → webhook Prepare → webhook Complete → auto-grant subscription
+- Security: MD5 signature verification + amount comparison against PaymentOrder in DB
+
+### ✅ B.11 — LandingPage & Dashboard UI Polish (done)
+- LandingPage header: removed logo (moved to standalone section), nav items right-aligned (`justify-content: flex-end`)
+- LandingPage: added large centered PravaDrive logo (72px) between header and hero section
+- LandingPage: "Bosh sahifa →" button replaced with "Akkaunt →" (`t.account` key), `whiteSpace: nowrap` to prevent text wrapping
+- LandingPage: Obuna button centered with `justifyContent: "center"`
+- DashboardPage: removed duplicate PravaDrive logo (already shown in AppLayout mobile header), greeting text made more prominent (15px, bolder name)
+- i18n: added `account` key — uz-latn "Akkaunt", ru "Аккаунт", uz-cyrl "Аккаунт"
+
+## Deployment
+- Production server: 185.191.141.229 (root, VPS 2CPU/4GB/80GB)
+- Project path: `/opt/pravadrive/`
+- Docker compose file: `docker-compose.prod.yml`
+- Environment: `/opt/pravadrive/.env`
+- Rebuild frontend: `cd /opt/pravadrive && docker compose -f docker-compose.prod.yml up -d --build frontend`
+- Rebuild API: `cd /opt/pravadrive && docker compose -f docker-compose.prod.yml up -d --build api`
+- Force recreate (env changes): add `--force-recreate` flag
+- Upload files: `scp <local_path> root@185.191.141.229:/opt/pravadrive/<remote_path>`
+
 ## Backlog (not started)
 - Admin Dashboard statistics (total users, attempts, revenue)
 - Teacher Analytics (per-group stats, weak topics)
 - Student explanations in AttemptPage (data in DB, UI not built)
-- Payme/Click real keys (deploy without for now, grant subscriptions manually via admin)
-- Deployment (VPS eskiz.uz VPS3, Ubuntu 22.04, Docker)
+- Telegram bot /start welcome message (planned, then cancelled)
 
 ## Working agreement
 1. Architecture/discussion before code; no surprise refactors
