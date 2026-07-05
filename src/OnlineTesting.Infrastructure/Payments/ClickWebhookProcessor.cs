@@ -39,10 +39,10 @@ public class ClickWebhookProcessor : IClickWebhookProcessor
         if (!VerifySign(req, null))
             return BuildError(req, 0, -1, "SIGN CHECK FAILED");
 
-        if (!Guid.TryParse(req.MerchantTransId, out var orderId))
+        if (!long.TryParse(req.MerchantTransId, out var orderNumber))
             return BuildError(req, 0, -6, "Transaction does not exist");
 
-        var order = await _db.PaymentOrders.FirstOrDefaultAsync(o => o.Id == orderId, ct);
+        var order = await _db.PaymentOrders.FirstOrDefaultAsync(o => o.OrderNumber == orderNumber, ct);
         if (order is null)
             return BuildError(req, 0, -5, "User does not exist");
 
@@ -62,7 +62,7 @@ public class ClickWebhookProcessor : IClickWebhookProcessor
         if (existing is not null)
             return BuildPrepareResult(req, existing.PrepareId);
 
-        var tx = ClickTransaction.Prepare(req.ClickTransId.ToString(), orderId, req.Amount);
+        var tx = ClickTransaction.Prepare(req.ClickTransId.ToString(), order.Id, req.Amount);
         _db.ClickTransactions.Add(tx);
 
         try

@@ -11,6 +11,12 @@ public class PaymentOrderConfiguration : IEntityTypeConfiguration<PaymentOrder>
         builder.ToTable("payment_orders");
         builder.HasKey(o => o.Id);
 
+        builder.Property(o => o.OrderNumber)
+            .IsRequired()
+            .UseIdentityAlwaysColumn();
+
+        builder.HasIndex(o => o.OrderNumber).IsUnique().HasDatabaseName("ux_payment_orders_order_number");
+
         builder.Property(o => o.UserId).IsRequired();
         builder.Property(o => o.PlanId).IsRequired();
         builder.Property(o => o.AmountTiyin).IsRequired();

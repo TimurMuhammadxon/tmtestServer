@@ -47,7 +47,7 @@ public class InitiateClickPaymentHandler : IRequestHandler<InitiateClickPaymentC
                           $"?service_id={_click.ServiceId}" +
                           $"&merchant_id={_click.MerchantId}" +
                           $"&amount={plan.Price.ToString("0.##", CultureInfo.InvariantCulture)}" +
-                          $"&transaction_param={order.Id}";
+                          $"&transaction_param={order.OrderNumber}";
 
         return new InitiateClickPaymentResult(order.Id, checkoutUrl, plan.Price);
     }

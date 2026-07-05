@@ -100,8 +100,24 @@ public class PaymentsController : ControllerBase
 
     [HttpPost("click/webhook")]
     [AllowAnonymous]
-    public async Task<IActionResult> ClickWebhook([FromBody] ClickWebhookRequest req, CancellationToken ct)
+    public async Task<IActionResult> ClickWebhook(CancellationToken ct)
     {
+        var f = Request.Form;
+        var req = new ClickWebhookRequest
+        {
+            ClickTransId    = long.TryParse(f["click_trans_id"], out var v1) ? v1 : 0,
+            ServiceId       = int.TryParse(f["service_id"], out var v2) ? v2 : 0,
+            ClickPaydocId   = long.TryParse(f["click_paydoc_id"], out var v3) ? v3 : 0,
+            MerchantTransId = f["merchant_trans_id"].ToString(),
+            MerchantPrepareId = long.TryParse(f["merchant_prepare_id"], out var v4) ? v4 : null,
+            Amount          = decimal.TryParse(f["amount"], System.Globalization.NumberStyles.Any,
+                                System.Globalization.CultureInfo.InvariantCulture, out var v5) ? v5 : 0,
+            Action          = int.TryParse(f["action"], out var v6) ? v6 : 0,
+            Error           = int.TryParse(f["error"], out var v7) ? v7 : 0,
+            ErrorNote       = f["error_note"].ToString(),
+            SignTime        = f["sign_time"].ToString(),
+            SignString      = f["sign_string"].ToString(),
+        };
         var result = await _clickProcessor.ProcessAsync(req, ct);
         return Ok(result);
     }

@@ -4,6 +4,7 @@ namespace OnlineTesting.Domain.Payments;
 
 public class PaymentOrder : Entity
 {
+    public long OrderNumber { get; private set; }
     public Guid UserId { get; private set; }
     public Guid PlanId { get; private set; }
     public long AmountTiyin { get; private set; }
