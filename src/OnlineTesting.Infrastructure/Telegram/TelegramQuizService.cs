@@ -98,7 +98,7 @@ public class TelegramQuizService : BackgroundService
             .FirstOrDefault(t => t.LanguageCode == Languages.UzLatn)?.Explanation;
 
         var chatIds = await db.ExternalLogins
-            .Where(e => e.Provider == ExternalLoginProvider.Telegram)
+            .Where(e => e.Provider == ExternalLoginProvider.Telegram && !e.TelegramBlocked)
             .Select(e => e.ExternalUserId)
             .ToListAsync(ct);
 
@@ -108,36 +108,65 @@ public class TelegramQuizService : BackgroundService
 
         var sent = 0;
         var failed = 0;
+        var deadChats = new List<string>();
 
         foreach (var chatId in chatIds)
         {
             try
             {
                 if (imageUrl is not null)
-                    await SendPhotoAsync(chatId, imageUrl, ct);
+                    await TrySendPhotoAsync(chatId, imageUrl, ct);
 
-                await SendQuizAsync(chatId, questionText, options, correctIndex, explanation, ct);
-                sent++;
+                var (ok, permanent) = await SendQuizAsync(chatId, questionText, options, correctIndex, explanation, ct);
+                if (ok)
+                {
+                    sent++;
+                }
+                else
+                {
+                    failed++;
+                    if (permanent) deadChats.Add(chatId);
+                }
             }
             catch (Exception ex)
             {
+                // Network/transient error — do not mark as dead, just retry next round.
                 failed++;
                 _logger.LogDebug(ex, "Failed to send quiz to chat {ChatId}", chatId);
             }
         }
 
+        // Stop messaging users who blocked the bot / never started a private chat.
+        if (deadChats.Count > 0)
+        {
+            var toBlock = await db.ExternalLogins
+                .Where(e => e.Provider == ExternalLoginProvider.Telegram && deadChats.Contains(e.ExternalUserId))
+                .ToListAsync(ct);
+            foreach (var login in toBlock)
+                login.MarkTelegramBlocked();
+            await db.SaveChangesAsync(ct);
+            _logger.LogInformation("Marked {Count} Telegram logins as blocked (won't be messaged again)", toBlock.Count);
+        }
+
         _logger.LogInformation("Quiz sent: {Sent} success, {Failed} failed, question {QuestionId}", sent, failed, question.Id);
     }
 
-    private async Task SendPhotoAsync(string chatId, string photoUrl, CancellationToken ct)
+    private async Task TrySendPhotoAsync(string chatId, string photoUrl, CancellationToken ct)
     {
-        var url = $"https://api.telegram.org/bot{_botToken}/sendPhoto";
-        var payload = new { chat_id = chatId, photo = photoUrl };
-        var response = await _http.PostAsJsonAsync(url, payload, ct);
-        response.EnsureSuccessStatusCode();
+        try
+        {
+            var url = $"https://api.telegram.org/bot{_botToken}/sendPhoto";
+            var payload = new { chat_id = chatId, photo = photoUrl };
+            await _http.PostAsJsonAsync(url, payload, ct);
+        }
+        catch
+        {
+            // Photo is best-effort; the poll's own status decides success/blocked.
+        }
     }
 
-    private async Task SendQuizAsync(
+    // Returns (ok, permanent). permanent=true means the user can no longer be messaged.
+    private async Task<(bool ok, bool permanent)> SendQuizAsync(
         string chatId, string question, List<string> options,
         int correctIndex, string? explanation, CancellationToken ct)
     {
@@ -157,6 +186,20 @@ public class TelegramQuizService : BackgroundService
             payload["explanation"] = explanation.Length > 200 ? explanation[..197] + "..." : explanation;
 
         var response = await _http.PostAsJsonAsync(url, payload, ct);
-        response.EnsureSuccessStatusCode();
+        if (response.IsSuccessStatusCode)
+            return (true, false);
+
+        var status = (int)response.StatusCode;
+        var body = await response.Content.ReadAsStringAsync(ct);
+
+        // 403 = bot blocked / can't initiate; 400 with these descriptions = user unreachable.
+        var permanent = status == 403
+            || (status == 400 && (
+                   body.Contains("chat not found", StringComparison.OrdinalIgnoreCase)
+                || body.Contains("bot can't initiate", StringComparison.OrdinalIgnoreCase)
+                || body.Contains("user is deactivated", StringComparison.OrdinalIgnoreCase)));
+
+        _logger.LogDebug("sendPoll to {ChatId} failed: {Status} {Body}", chatId, status, body);
+        return (false, permanent);
     }
 }

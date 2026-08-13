@@ -15,6 +15,7 @@ public class ExternalLoginConfiguration : IEntityTypeConfiguration<ExternalLogin
         builder.Property(e => e.ExternalUserId).IsRequired().HasMaxLength(64);
         builder.Property(e => e.ExternalUsername).HasMaxLength(64);
         builder.Property(e => e.LinkedAt).IsRequired();
+        builder.Property(e => e.TelegramBlocked).IsRequired().HasDefaultValue(false);
 
         // Один external account → один наш юзер
         builder.HasIndex(e => new { e.Provider, e.ExternalUserId })

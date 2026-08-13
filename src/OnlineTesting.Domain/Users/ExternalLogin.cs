@@ -10,6 +10,13 @@ public class ExternalLogin : Entity
     public string? ExternalUsername { get; private set; }
     public DateTime LinkedAt { get; private set; }
 
+    /// <summary>
+    /// True when the bot can no longer message this Telegram user
+    /// (blocked the bot / never started a private chat / deactivated).
+    /// Such logins are skipped by the quiz broadcast.
+    /// </summary>
+    public bool TelegramBlocked { get; private set; }
+
     public User User { get; private set; } = null!;
 
     private ExternalLogin() { } // EF
@@ -42,4 +49,6 @@ public class ExternalLogin : Entity
 
         return new ExternalLogin(Guid.NewGuid(), userId, provider, externalUserId, externalUsername);
     }
+
+    public void MarkTelegramBlocked() => TelegramBlocked = true;
 }

@@ -23,8 +23,15 @@ public class SubscriptionChecker : ISubscriptionChecker
         if (_cache.TryGetValue(key, out bool cached))
             return cached;
 
+        var now = DateTime.UtcNow;
+
         var result = await _db.Subscriptions
-            .AnyAsync(s => s.UserId == userId && s.ExpiresAt > DateTime.UtcNow, ct);
+            .AnyAsync(s => s.UserId == userId && s.ExpiresAt > now, ct);
+
+        // Free trial: full access during the first 24h after registration.
+        if (!result)
+            result = await _db.Users
+                .AnyAsync(u => u.Id == userId && u.CreatedAt > now.AddDays(-1), ct);
 
         _cache.Set(key, result, CacheDuration);
         return result;

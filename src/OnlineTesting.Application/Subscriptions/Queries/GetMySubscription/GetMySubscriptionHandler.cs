@@ -32,9 +32,29 @@ public class GetMySubscriptionHandler : IRequestHandler<GetMySubscriptionQuery, 
                 x.p.Price,
                 x.s.StartsAt,
                 x.s.ExpiresAt,
-                x.s.ExpiresAt > DateTime.UtcNow))
+                x.s.ExpiresAt > DateTime.UtcNow,
+                false))
             .FirstOrDefaultAsync(ct);
 
-        return result;
+        if (result is not null)
+            return result;
+
+        // No subscription row → free trial during the first 24h after registration.
+        var now = DateTime.UtcNow;
+        var createdAt = await _db.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => (DateTime?)u.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+
+        if (createdAt is not null)
+        {
+            var trialEnd = createdAt.Value.AddDays(1);
+            if (trialEnd > now)
+                return new MySubscriptionDto(
+                    Guid.Empty, "Trial", "", 0m, createdAt.Value, trialEnd, IsActive: true, IsTrial: true);
+        }
+
+        return null;
     }
 }

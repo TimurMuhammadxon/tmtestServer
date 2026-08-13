@@ -11,5 +11,6 @@ public record MySubscriptionDto(
     decimal PlanPrice,
     DateTime StartsAt,
     DateTime ExpiresAt,
-    bool IsActive
+    bool IsActive,
+    bool IsTrial = false
 );
