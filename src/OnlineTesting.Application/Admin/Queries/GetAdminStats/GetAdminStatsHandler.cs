@@ -17,8 +17,9 @@ public class GetAdminStatsHandler : IRequestHandler<GetAdminStatsQuery, AdminSta
     public async Task<AdminStatsDto> Handle(GetAdminStatsQuery request, CancellationToken ct)
     {
         var now = DateTime.UtcNow;
-        var todayStart = now.Date;
-        var weekStart = todayStart.AddDays(-7);
+        // Local (UTC+5) day boundaries, expressed as UTC instants for CreatedAt comparison.
+        var todayStart = Common.AppTime.StartOfDayUtc(Common.AppTime.Today);
+        var weekStart = Common.AppTime.StartOfDayUtc(Common.AppTime.Today.AddDays(-6));
 
         var totalUsers = await _db.Users.CountAsync(ct);
         var activeSubscriptions = await _db.Subscriptions.CountAsync(s => s.ExpiresAt > now, ct);

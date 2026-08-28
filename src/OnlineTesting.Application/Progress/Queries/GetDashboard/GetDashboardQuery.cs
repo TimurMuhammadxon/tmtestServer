@@ -13,7 +13,16 @@ public record DashboardDto(
     double AccuracyPercent,
     int ExamPassPrediction,
     List<WeakTopicDto> WeakTopics,
-    List<RecentAttemptDto> RecentAttempts);
+    List<RecentAttemptDto> RecentAttempts,
+    List<DailyActivityDto> WeeklyActivity,
+    int TotalQuestions,
+    int CoveredQuestions,
+    int MasteredQuestions);
+
+public record DailyActivityDto(
+    DateOnly Date,
+    int AnswersCount,
+    double AccuracyPercent);
 
 public record WeakTopicDto(
     Guid TopicId,

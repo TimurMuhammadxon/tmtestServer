@@ -15,9 +15,12 @@ public class PublicTopicsController : ControllerBase
 
     public PublicTopicsController(ISender sender) => _sender = sender;
 
+    // No caching: the response depends on auth (guests see demo-only), and ANY
+    // shared cache leaks the guest response to logged-in users (empty topics).
+    // Client-side React Query already caches this per-user in memory.
     [AllowAnonymous]
     [HttpGet]
-    [ResponseCache(Duration = 300)]
+    [ResponseCache(NoStore = true)]
     public Task<List<TopicStudentDto>> List(CancellationToken ct)
     {
         var guest = User.Identity?.IsAuthenticated != true;

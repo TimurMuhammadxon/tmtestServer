@@ -57,7 +57,7 @@ public class SubmitAnswerHandler : IRequestHandler<SubmitAnswerCommand, SubmitAn
 
         if (attempt.TestLinkId == null)
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = OnlineTesting.Application.Common.AppTime.Today;
             var alreadyTracked = await _db.UserDailyActivities
                 .AnyAsync(a => a.UserId == userId && a.ActivityDate == today, ct);
             if (!alreadyTracked)

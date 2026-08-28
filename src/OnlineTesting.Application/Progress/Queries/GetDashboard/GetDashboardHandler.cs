@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using OnlineTesting.Application.Common.Constants;
 using OnlineTesting.Application.Common.Exceptions;
 using OnlineTesting.Application.Common.Interfaces;
 using OnlineTesting.Domain.Tests;
@@ -30,11 +31,33 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
             .ToListAsync(ct);
 
         var dateSet = allDates.ToHashSet();
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = Common.AppTime.Today;
         var currentStreak = ComputeCurrentStreak(dateSet, today);
         var longestStreak = ComputeLongestStreak(allDates);
 
         var userAttemptIds = _db.Attempts.Where(a => a.UserId == userId && a.TestLinkId == null).Select(a => a.Id);
+
+        // Weekly activity — last 7 local (UTC+5) days, computed server-side from answers.
+        var weekSinceUtc = Common.AppTime.StartOfDayUtc(today.AddDays(-6));
+        var weekAnswers = await _db.AttemptQuestions
+            .Where(aq => userAttemptIds.Contains(aq.AttemptId) && aq.ChosenAnswerId != null && aq.AnsweredAt >= weekSinceUtc)
+            .Select(aq => new { aq.AnsweredAt, aq.IsCorrect })
+            .ToListAsync(ct);
+
+        var byDay = weekAnswers
+            .Where(a => a.AnsweredAt != null)
+            .GroupBy(a => Common.AppTime.LocalDate(a.AnsweredAt!.Value))
+            .ToDictionary(g => g.Key, g => new { Total = g.Count(), Correct = g.Count(x => x.IsCorrect == true) });
+
+        var weeklyActivity = new List<DailyActivityDto>();
+        for (var i = 6; i >= 0; i--)
+        {
+            var d = today.AddDays(-i);
+            byDay.TryGetValue(d, out var s);
+            var total = s?.Total ?? 0;
+            var acc = total > 0 ? Math.Round((double)s!.Correct / total * 100, 1) : 0.0;
+            weeklyActivity.Add(new DailyActivityDto(d, total, acc));
+        }
 
         var answerStats = await _db.AttemptQuestions
             .Where(aq => userAttemptIds.Contains(aq.AttemptId) && aq.ChosenAnswerId != null)
@@ -48,6 +71,23 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
         var accuracy = totalAnswered > 0
             ? Math.Round((double)totalCorrect / totalAnswered * 100, 1)
             : 0.0;
+
+        // Mastery / coverage — by UNIQUE active questions (not inflated by repeats).
+        // Denominator is dynamic so it grows as new questions are added.
+        var activeQuestions = _db.Questions.Where(q => q.IsActive).Select(q => q.Id);
+        var totalQuestions = await activeQuestions.CountAsync(ct);
+
+        var coveredQuestions = await _db.AttemptQuestions
+            .Where(aq => userAttemptIds.Contains(aq.AttemptId) && aq.ChosenAnswerId != null)
+            .Join(activeQuestions, aq => aq.QuestionId, id => id, (aq, id) => aq.QuestionId)
+            .Distinct()
+            .CountAsync(ct);
+
+        var masteredQuestions = await _db.AttemptQuestions
+            .Where(aq => userAttemptIds.Contains(aq.AttemptId) && aq.IsCorrect == true)
+            .Join(activeQuestions, aq => aq.QuestionId, id => id, (aq, id) => aq.QuestionId)
+            .Distinct()
+            .CountAsync(ct);
 
         var topicStats = await _db.AttemptQuestions
             .Where(aq => userAttemptIds.Contains(aq.AttemptId) && aq.ChosenAnswerId != null)
@@ -126,9 +166,10 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
 
         return new DashboardDto(
             currentStreak, longestStreak,
-            GetLevel(totalCorrect),
+            GetLevel(totalCorrect, _lang.RequestedLanguage),
             totalCorrect, totalAnswered, accuracy,
-            prediction, weakTopics, recentAttempts);
+            prediction, weakTopics, recentAttempts, weeklyActivity,
+            totalQuestions, coveredQuestions, masteredQuestions);
     }
 
     private static int ComputeCurrentStreak(HashSet<DateOnly> dates, DateOnly today)
@@ -173,14 +214,18 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
         return (int)Math.Min(score, 95);
     }
 
-    private static string GetLevel(int totalCorrect) => totalCorrect switch
+    private static string GetLevel(int totalCorrect, string lang)
     {
-        < 50 => "Новичок",
-        < 150 => "Начинающий",
-        < 300 => "Практикант",
-        < 500 => "Уверенный",
-        < 1000 => "Опытный",
-        _ => "Мастер"
-    };
+        var tier = totalCorrect switch
+        {
+            < 50 => 0, < 150 => 1, < 300 => 2, < 500 => 3, < 1000 => 4, _ => 5
+        };
+        return lang switch
+        {
+            Languages.Ru => new[] { "Новичок", "Начинающий", "Практикант", "Уверенный", "Опытный", "Мастер" }[tier],
+            Languages.UzCyrl => new[] { "Бошловчи", "Ўрганувчи", "Амалиётчи", "Ишончли", "Тажрибали", "Уста" }[tier],
+            _ => new[] { "Boshlovchi", "O'rganuvchi", "Amaliyotchi", "Ishonchli", "Tajribali", "Usta" }[tier],
+        };
+    }
 
 }

@@ -15,8 +15,9 @@ public class BiletsController : ControllerBase
     private readonly IMediator _mediator;
     public BiletsController(IMediator mediator) => _mediator = mediator;
 
+    // No caching: guests see demo-only, so any shared cache leaks that to logged-in users.
     [HttpGet]
-    [ResponseCache(Duration = 300)]
+    [ResponseCache(NoStore = true)]
     [ProducesResponseType(typeof(IReadOnlyList<PublicBiletListItemDto>), StatusCodes.Status200OK)]
     public async Task<IActionResult> List(CancellationToken ct)
     {
@@ -25,7 +26,7 @@ public class BiletsController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    [ResponseCache(Duration = 300)]
+    [ResponseCache(NoStore = true)]
     [ProducesResponseType(typeof(PublicBiletDetailsDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
