@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using OnlineTesting.Domain.Content;
 using OnlineTesting.Domain.Payments;
 using OnlineTesting.Domain.Progress;
 using OnlineTesting.Domain.Subscriptions;
@@ -35,6 +36,10 @@ public interface IApplicationDbContext
     DbSet<PaymentOrder> PaymentOrders { get; }
     DbSet<PaymeTransaction> PaymeTransactions { get; }
     DbSet<ClickTransaction> ClickTransactions { get; }
+    DbSet<RoadSignCategory> RoadSignCategories { get; }
+    DbSet<RoadSignCategoryTranslation> RoadSignCategoryTranslations { get; }
+    DbSet<RoadSign> RoadSigns { get; }
+    DbSet<RoadSignTranslation> RoadSignTranslations { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);

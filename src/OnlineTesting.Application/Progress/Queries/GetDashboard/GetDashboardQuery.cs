@@ -17,7 +17,8 @@ public record DashboardDto(
     List<DailyActivityDto> WeeklyActivity,
     int TotalQuestions,
     int CoveredQuestions,
-    int MasteredQuestions);
+    int MasteredQuestions,
+    int ErrorQuestionsCount);
 
 public record DailyActivityDto(
     DateOnly Date,

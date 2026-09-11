@@ -68,6 +68,25 @@ builder.Services.AddRateLimiter(options =>
 });
 
 builder.Services.AddResponseCaching();
+
+// Response compression — big win for large JSON (e.g. Marathon attempt with ~1300 questions).
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
+    options.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
+    options.MimeTypes = new[]
+    {
+        "text/plain", "text/css", "application/javascript", "text/javascript",
+        "text/html", "application/xml", "text/xml",
+        "application/json", "application/problem+json", "image/svg+xml"
+    };
+});
+builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>(
+    o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
+builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProviderOptions>(
+    o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -110,6 +129,7 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 });
+app.UseResponseCompression();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseRateLimiter();
 

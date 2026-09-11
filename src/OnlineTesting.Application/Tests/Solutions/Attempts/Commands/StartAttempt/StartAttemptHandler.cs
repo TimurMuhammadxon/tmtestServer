@@ -49,6 +49,7 @@ public class StartAttemptHandler : IRequestHandler<StartAttemptCommand, Guid>
             FlowType.Custom   => await SelectCustomQuestionsAsync(request.TopicIds, request.QuestionCount!.Value, ct),
             FlowType.Exam     => await SelectExamQuestionsAsync(ct),
             FlowType.Marathon => await SelectMarathonQuestionsAsync(ct),
+            FlowType.Mistakes => await SelectMistakeQuestionsAsync(userId, ct),
             _                 => throw new ArgumentOutOfRangeException(nameof(request.FlowType))
         };
 
@@ -136,5 +137,35 @@ public class StartAttemptHandler : IRequestHandler<StartAttemptCommand, Guid>
             .OrderBy(_ => EF.Functions.Random())
             .Select(q => q.Id)
             .ToListAsync(ct);
+    }
+
+    // Active questions whose LATEST answer by this user was wrong ("unresolved" mistakes).
+    // Answering one correctly here makes the correct answer the latest → it drops from the set.
+    private async Task<IReadOnlyList<Guid>> SelectMistakeQuestionsAsync(Guid userId, CancellationToken ct)
+    {
+        var userAttemptIds = _db.Attempts
+            .Where(a => a.UserId == userId && a.TestLinkId == null)
+            .Select(a => a.Id);
+
+        var answered = await _db.AttemptQuestions
+            .Where(aq => userAttemptIds.Contains(aq.AttemptId) && aq.ChosenAnswerId != null && aq.AnsweredAt != null)
+            .Select(aq => new { aq.QuestionId, aq.IsCorrect, aq.AnsweredAt })
+            .ToListAsync(ct);
+
+        var latestWrong = answered
+            .GroupBy(a => a.QuestionId)
+            .Where(g => g.OrderByDescending(x => x.AnsweredAt).First().IsCorrect == false)
+            .Select(g => g.Key)
+            .ToHashSet();
+
+        if (latestWrong.Count == 0)
+            return Array.Empty<Guid>();
+
+        var activeWrong = await _db.Questions
+            .Where(q => q.IsActive && latestWrong.Contains(q.Id))
+            .Select(q => q.Id)
+            .ToListAsync(ct);
+
+        return activeWrong.OrderBy(_ => Guid.NewGuid()).ToList();
     }
 }

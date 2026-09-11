@@ -41,24 +41,26 @@ public class GetAttemptHandler : IRequestHandler<GetAttemptQuery, AttemptDto>
 
         var questionIds = attemptQuestions.Select(aq => aq.QuestionId).ToList();
 
+        var requested = _lang.RequestedLanguage;
+        var fallback = _lang.DefaultLanguage;
+
+        // Only pull the languages we actually render (requested + fallback), not all 3 —
+        // for Marathon (~1300 questions) this roughly thirds the translation payload.
         var questions = await _db.Questions
             .AsNoTracking()
             .Where(q => questionIds.Contains(q.Id))
-            .Include(q => q.Translations)
+            .Include(q => q.Translations.Where(t => t.LanguageCode == requested || t.LanguageCode == fallback))
             .ToDictionaryAsync(q => q.Id, ct);
 
         var answers = await _db.Answers
             .AsNoTracking()
             .Where(a => questionIds.Contains(a.QuestionId))
-            .Include(a => a.Translations)
+            .Include(a => a.Translations.Where(t => t.LanguageCode == requested || t.LanguageCode == fallback))
             .ToListAsync(ct);
 
         var answersByQuestion = answers
             .GroupBy(a => a.QuestionId)
             .ToDictionary(g => g.Key, g => g.OrderBy(a => a.OrderIndex).ToList());
-
-        var requested = _lang.RequestedLanguage;
-        var fallback = _lang.DefaultLanguage;
 
         var questionDtos = attemptQuestions.Select(aq =>
         {

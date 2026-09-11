@@ -23,6 +23,134 @@ namespace OnlineTesting.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("OnlineTesting.Domain.Content.RoadSign", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
+
+                    b.Property<string>("Code")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("code");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ImageKey")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("image_key");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("integer")
+                        .HasColumnName("order_index");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_road_signs");
+
+                    b.HasIndex("CategoryId")
+                        .HasDatabaseName("ix_road_signs_category_id");
+
+                    b.ToTable("road_signs", (string)null);
+                });
+
+            modelBuilder.Entity("OnlineTesting.Domain.Content.RoadSignCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("integer")
+                        .HasColumnName("order_index");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_road_sign_categories");
+
+                    b.ToTable("road_sign_categories", (string)null);
+                });
+
+            modelBuilder.Entity("OnlineTesting.Domain.Content.RoadSignCategoryTranslation", b =>
+                {
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
+
+                    b.Property<string>("LanguageCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("language_code");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
+
+                    b.HasKey("CategoryId", "LanguageCode")
+                        .HasName("pk_road_sign_category_translations");
+
+                    b.HasIndex("LanguageCode")
+                        .HasDatabaseName("ix_road_sign_category_translations_language_code");
+
+                    b.ToTable("road_sign_category_translations", (string)null);
+                });
+
+            modelBuilder.Entity("OnlineTesting.Domain.Content.RoadSignTranslation", b =>
+                {
+                    b.Property<Guid>("SignId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sign_id");
+
+                    b.Property<string>("LanguageCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("language_code");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("name");
+
+                    b.HasKey("SignId", "LanguageCode")
+                        .HasName("pk_road_sign_translations");
+
+                    b.HasIndex("LanguageCode")
+                        .HasDatabaseName("ix_road_sign_translations_language_code");
+
+                    b.ToTable("road_sign_translations", (string)null);
+                });
+
             modelBuilder.Entity("OnlineTesting.Domain.Payments.ClickTransaction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1047,6 +1175,50 @@ namespace OnlineTesting.Infrastructure.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("OnlineTesting.Domain.Content.RoadSign", b =>
+                {
+                    b.HasOne("OnlineTesting.Domain.Content.RoadSignCategory", null)
+                        .WithMany("Signs")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_road_signs_road_sign_categories_category_id");
+                });
+
+            modelBuilder.Entity("OnlineTesting.Domain.Content.RoadSignCategoryTranslation", b =>
+                {
+                    b.HasOne("OnlineTesting.Domain.Content.RoadSignCategory", null)
+                        .WithMany("Translations")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_road_sign_category_translations_road_sign_categories_catego");
+
+                    b.HasOne("OnlineTesting.Domain.Tests.Language", null)
+                        .WithMany()
+                        .HasForeignKey("LanguageCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_road_sign_category_translations_languages_language_code");
+                });
+
+            modelBuilder.Entity("OnlineTesting.Domain.Content.RoadSignTranslation", b =>
+                {
+                    b.HasOne("OnlineTesting.Domain.Tests.Language", null)
+                        .WithMany()
+                        .HasForeignKey("LanguageCode")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_road_sign_translations_languages_language_code");
+
+                    b.HasOne("OnlineTesting.Domain.Content.RoadSign", null)
+                        .WithMany("Translations")
+                        .HasForeignKey("SignId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_road_sign_translations_road_signs_sign_id");
+                });
+
             modelBuilder.Entity("OnlineTesting.Domain.Teacher.GroupMember", b =>
                 {
                     b.HasOne("OnlineTesting.Domain.Teacher.Group", null)
@@ -1192,6 +1364,18 @@ namespace OnlineTesting.Infrastructure.Migrations
                         .HasConstraintName("fk_refresh_tokens_users_user_id");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("OnlineTesting.Domain.Content.RoadSign", b =>
+                {
+                    b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("OnlineTesting.Domain.Content.RoadSignCategory", b =>
+                {
+                    b.Navigation("Signs");
+
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("OnlineTesting.Domain.Teacher.Group", b =>

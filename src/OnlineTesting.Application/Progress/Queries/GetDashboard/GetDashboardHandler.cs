@@ -89,6 +89,22 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
             .Distinct()
             .CountAsync(ct);
 
+        // Active questions whose LATEST answer was wrong ("unresolved" mistakes) — must match
+        // the Mistakes flow, so re-answering correctly removes a question from this count.
+        var answeredForErrors = await _db.AttemptQuestions
+            .Where(aq => userAttemptIds.Contains(aq.AttemptId) && aq.ChosenAnswerId != null && aq.AnsweredAt != null)
+            .Select(aq => new { aq.QuestionId, aq.IsCorrect, aq.AnsweredAt })
+            .ToListAsync(ct);
+
+        var latestWrongIds = answeredForErrors
+            .GroupBy(a => a.QuestionId)
+            .Where(g => g.OrderByDescending(x => x.AnsweredAt).First().IsCorrect == false)
+            .Select(g => g.Key)
+            .ToHashSet();
+
+        var errorQuestionsCount = await _db.Questions
+            .CountAsync(q => q.IsActive && latestWrongIds.Contains(q.Id), ct);
+
         var topicStats = await _db.AttemptQuestions
             .Where(aq => userAttemptIds.Contains(aq.AttemptId) && aq.ChosenAnswerId != null)
             .Join(_db.Questions, aq => aq.QuestionId, q => q.Id, (aq, q) => new { aq.IsCorrect, q.TopicId })
@@ -169,7 +185,7 @@ public class GetDashboardHandler : IRequestHandler<GetDashboardQuery, DashboardD
             GetLevel(totalCorrect, _lang.RequestedLanguage),
             totalCorrect, totalAnswered, accuracy,
             prediction, weakTopics, recentAttempts, weeklyActivity,
-            totalQuestions, coveredQuestions, masteredQuestions);
+            totalQuestions, coveredQuestions, masteredQuestions, errorQuestionsCount);
     }
 
     private static int ComputeCurrentStreak(HashSet<DateOnly> dates, DateOnly today)
