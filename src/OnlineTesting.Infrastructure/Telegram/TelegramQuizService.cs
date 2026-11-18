@@ -19,7 +19,10 @@ public class TelegramQuizService : BackgroundService
     private readonly HttpClient _http;
     private readonly string _botToken;
     private readonly IStorageService _storage;
-    private static readonly TimeSpan Interval = TimeSpan.FromHours(3);
+    // Send 3 times a day at fixed Uzbekistan local times (UTC+5, no DST):
+    // 09:00 morning, 13:00 lunch, 20:00 evening.
+    private static readonly TimeSpan UzOffset = TimeSpan.FromHours(5);
+    private static readonly int[] SendHoursLocal = { 9, 13, 20 };
 
     public TelegramQuizService(
         IServiceScopeFactory scopeFactory,
@@ -43,10 +46,21 @@ public class TelegramQuizService : BackgroundService
             return;
         }
 
-        await Task.Delay(TimeSpan.FromMinutes(1), ct);
-
         while (!ct.IsCancellationRequested)
         {
+            var delay = TimeUntilNextSlot(DateTime.UtcNow);
+            _logger.LogInformation(
+                "Next Telegram quiz in {Delay} (sends at 09:00 / 13:00 / 20:00 Tashkent time)", delay);
+
+            try
+            {
+                await Task.Delay(delay, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+
             try
             {
                 await SendRandomQuizAsync(ct);
@@ -55,9 +69,22 @@ public class TelegramQuizService : BackgroundService
             {
                 _logger.LogError(ex, "Failed to send Telegram quiz");
             }
-
-            await Task.Delay(Interval, ct);
         }
+    }
+
+    // Time to wait until the next 09:00 / 13:00 / 20:00 slot in Uzbekistan local time (UTC+5).
+    private static TimeSpan TimeUntilNextSlot(DateTime utcNow)
+    {
+        var local = utcNow + UzOffset;
+        var today = local.Date;
+        foreach (var hour in SendHoursLocal)
+        {
+            var slot = today.AddHours(hour);
+            if (slot > local)
+                return slot - local;
+        }
+        // All of today's slots have passed → first slot tomorrow.
+        return today.AddDays(1).AddHours(SendHoursLocal[0]) - local;
     }
 
     private async Task SendRandomQuizAsync(CancellationToken ct)
