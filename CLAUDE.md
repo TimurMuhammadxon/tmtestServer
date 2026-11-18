@@ -241,6 +241,27 @@ Entities: `User`, `RefreshToken`, `ExternalLogin`
 - DashboardPage: removed duplicate PravaDrive logo (already shown in AppLayout mobile header), greeting text made more prominent (15px, bolder name)
 - i18n: added `account` key — uz-latn "Akkaunt", ru "Аккаунт", uz-cyrl "Аккаунт"
 
+### ✅ B.12 — Extra test flows: Mistakes + Yangi savollar (done, deployed)
+- `FlowType` extended: `Mistakes = 6`, `NewQuestions = 7` (was 1..5)
+- **Mistakes(6)** "Xatolar ustida ishlash": active questions whose LATEST answer by this user was wrong (unresolved mistakes); answering one correctly makes the correct answer the latest → it drops from the set; empty set → frontend toast `mistakesEmpty`
+  - `StartAttemptHandler.SelectMistakeQuestionsAsync(userId, ct)`; no QuestionCount
+- **NewQuestions(7)** "Yangi savollar": newest N active questions by `CreatedAt DESC`, then shuffled (`OrderBy(Guid.NewGuid())`)
+  - `StartAttemptHandler.SelectNewestQuestionsAsync(count, ct)`; `QuestionCount` required (validator: NotNull + >0)
+  - Frontend `NewQuestionsDialog` offers 20/40/50/100
+- Frontend: Dashboard mode cards for both; Mistakes rendered as a standalone amber card (mobile) / compact card next to Yangi savollar (desktop)
+
+### ✅ B.13 — Theming (Light/Dark) + Dashboard & Light-mode polish (done; light-mode deployed, dashboard compaction pending deploy)
+Frontend-only (repo `tmtestClient`, separate from this backend repo). Logged here to keep one changelog (cf. B.11).
+- **Theme system**: `store/prefs.ts` toggles `.dark` class on `<html>`; **default Light on all devices**; persisted in `localStorage["app-theme"]`
+- **`index.css` tokens**: two sets — shadcn HSL (`--background`, `--card`, …) + app-design hex (`--app-bg/surface/line/ink/muted/teal/blue/amber…`) — defined for light `:root` and `.dark` (navy, matches DashboardPage). Desktop-light override to a **Zinc** neutral palette via `@media (min-width:1024px){ :root:not(.dark){…} }` (unlayered CSS beats `@layer base`)
+- **Dark theme unified to navy** everywhere (was near-black + neon cyan on auth/public). Auth/public pages (`AuthLayout`, `LoginPage`, `RegisterPage`, `TestLinkPublicPage`) converted from hardcoded `#0a0a0f`/`rgba(13,13,22)`/`#00f0ff` to `var(--app-*)` tokens
+- **Light-mode fixes**: every dark-only Tailwind tint (`bg-*-950/*`, `text-white`, `hover:bg-white/5`) given a light base + `dark:` variant — `ui/badge.tsx`, `ui/alert.tsx`, `shared/Sidebar.tsx`, `PracticePage`, `SubscriptionPage`, `admin/UsersPage`, `admin/BiletsPage`, `App.tsx` loader
+- **Font**: system stack (`-apple-system, …`); numbers in JetBrains Mono (dropped the Manrope/Outfit experiment)
+- **Landing** made theme-aware; logo swaps per theme (`*-light.svg` on light bg)
+- **Dashboard compaction** (mobile + desktop, to fit one screen): greeting + pills (streak/Obuna/Aa) forced onto one line with ellipsis; removed "Test rejimlari" heading and the readiness status line; `subExpired` banner text shortened to **"Obuna tugadi" / "Подписка истекла" / "Обуна тугади"**
+- **Exam result texts**: fail → `Siz imtihondan o'tmadingiz`, pass → `Tabriklaymiz. Imtihondan o'tdingiz`
+- **Biletlar card** shows dynamic bilet count (from `bilets.length`)
+
 ## Deployment
 - Production server: 185.191.141.229 (root, VPS 2CPU/4GB/80GB)
 - Project path: `/opt/pravadrive/`

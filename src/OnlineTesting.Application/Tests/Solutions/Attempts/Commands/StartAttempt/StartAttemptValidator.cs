@@ -31,5 +31,12 @@ public class StartAttemptValidator : AbstractValidator<StartAttemptCommand>
                 .NotNull().WithMessage("QuestionCount is required for Custom flow.")
                 .GreaterThan(0).WithMessage("QuestionCount must be positive.");
         });
+
+        When(x => x.FlowType == FlowType.NewQuestions, () =>
+        {
+            RuleFor(x => x.QuestionCount)
+                .NotNull().WithMessage("QuestionCount is required for NewQuestions flow.")
+                .GreaterThan(0).WithMessage("QuestionCount must be positive.");
+        });
     }
 }

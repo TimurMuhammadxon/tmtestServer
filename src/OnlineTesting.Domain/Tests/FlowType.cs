@@ -7,5 +7,6 @@ public enum FlowType
     Custom = 3,
     Exam = 4,
     Marathon = 5,
-    Mistakes = 6
+    Mistakes = 6,
+    NewQuestions = 7
 }

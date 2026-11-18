@@ -50,6 +50,7 @@ public class StartAttemptHandler : IRequestHandler<StartAttemptCommand, Guid>
             FlowType.Exam     => await SelectExamQuestionsAsync(ct),
             FlowType.Marathon => await SelectMarathonQuestionsAsync(ct),
             FlowType.Mistakes => await SelectMistakeQuestionsAsync(userId, ct),
+            FlowType.NewQuestions => await SelectNewestQuestionsAsync(request.QuestionCount!.Value, ct),
             _                 => throw new ArgumentOutOfRangeException(nameof(request.FlowType))
         };
 
@@ -137,6 +138,18 @@ public class StartAttemptHandler : IRequestHandler<StartAttemptCommand, Guid>
             .OrderBy(_ => EF.Functions.Random())
             .Select(q => q.Id)
             .ToListAsync(ct);
+    }
+
+    // Newest N active questions by creation date (for the "Yangi savollar" mode).
+    private async Task<IReadOnlyList<Guid>> SelectNewestQuestionsAsync(int count, CancellationToken ct)
+    {
+        var ids = await _db.Questions
+            .Where(q => q.IsActive)
+            .OrderByDescending(q => q.CreatedAt)
+            .Take(count)
+            .Select(q => q.Id)
+            .ToListAsync(ct);
+        return ids.OrderBy(_ => Guid.NewGuid()).ToList();
     }
 
     // Active questions whose LATEST answer by this user was wrong ("unresolved" mistakes).
